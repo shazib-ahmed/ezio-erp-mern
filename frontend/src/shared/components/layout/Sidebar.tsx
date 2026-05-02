@@ -4,8 +4,7 @@ import {
   Package, 
   ShoppingCart, 
   Users, 
-  Settings, 
-  Building2,
+  Settings,
   ChevronLeft,
   ChevronDown,
   ChevronRight,
@@ -38,7 +37,18 @@ const navItems: NavItem[] = [
       { label: 'Financial Reports', path: '/finance/reports' },
     ]
   },
-  { icon: ShoppingCart, label: 'Sales', path: '/sales' },
+  { 
+    icon: ShoppingCart, 
+    label: 'Sales', 
+    path: '/sales',
+    subItems: [
+      { label: 'Quotations', path: '/sales/quotations' },
+      { label: 'Sales Orders', path: '/sales/orders' },
+      { label: 'POS Terminal', path: '/sales/pos' },
+      { label: 'Customer Credit', path: '/sales/customers' },
+      { label: 'Returns & Refunds', path: '/sales/returns' },
+    ]
+  },
   { 
     icon: Users, 
     label: 'HRM', 
@@ -52,7 +62,6 @@ const navItems: NavItem[] = [
       { label: 'Document Vault', path: '/hrm/documents' },
     ]
   },
-  { icon: Building2, label: 'Procurement', path: '/procurement' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 

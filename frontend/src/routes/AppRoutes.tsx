@@ -18,6 +18,13 @@ const Payroll = lazy(() => import('@/pages/hrm/Payroll'));
 const RolesPermissions = lazy(() => import('@/pages/hrm/RolesPermissions'));
 const DocumentVault = lazy(() => import('@/pages/hrm/DocumentVault'));
 
+const Quotations = lazy(() => import('@/pages/sales/Quotations'));
+const Orders = lazy(() => import('@/pages/sales/Orders'));
+const POS = lazy(() => import('@/pages/sales/POS'));
+const Customers = lazy(() => import('@/pages/sales/Customers'));
+const Returns = lazy(() => import('@/pages/sales/Returns'));
+const SettingsPage = lazy(() => import('@/pages/settings/Settings'));
+
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
@@ -133,10 +140,61 @@ const AppRoutes: React.FC = () => {
         } 
       />
 
+      {/* Sales Routes */}
+      <Route 
+        path="/sales/quotations" 
+        element={
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <Quotations />
+          </React.Suspense>
+        } 
+      />
+      <Route 
+        path="/sales/orders" 
+        element={
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <Orders />
+          </React.Suspense>
+        } 
+      />
+      <Route 
+        path="/sales/pos" 
+        element={
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <POS />
+          </React.Suspense>
+        } 
+      />
+      <Route 
+        path="/sales/customers" 
+        element={
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <Customers />
+          </React.Suspense>
+        } 
+      />
+      <Route 
+        path="/sales/returns" 
+        element={
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <Returns />
+          </React.Suspense>
+        } 
+      />
+      <Route 
+        path="/settings" 
+        element={
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <SettingsPage />
+          </React.Suspense>
+        } 
+      />
+
       {/* Redirects */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/finance" element={<Navigate to="/finance/ledger" replace />} />
       <Route path="/hrm" element={<Navigate to="/hrm/employees" replace />} />
+      <Route path="/sales" element={<Navigate to="/sales/orders" replace />} />
     </Routes>
   );
 };
