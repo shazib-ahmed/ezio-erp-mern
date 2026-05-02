@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
+import { cn } from '@/shared/lib/utils';
 
-const ThemeSwitcher: React.FC = () => {
+interface ThemeSwitcherProps {
+  className?: string;
+}
+
+const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ className }) => {
   const [isDark, setIsDark] = useState(() => {
     return document.documentElement.classList.contains('dark') || 
            localStorage.getItem('theme') === 'dark';
@@ -23,7 +28,7 @@ const ThemeSwitcher: React.FC = () => {
       variant="ghost"
       size="icon"
       onClick={() => setIsDark(!isDark)}
-      className="fixed top-4 right-4 rounded-full bg-background/80 backdrop-blur-sm border border-border z-50"
+      className={cn("fixed top-4 right-4 rounded-full bg-background/80 backdrop-blur-sm border border-border z-50", className)}
     >
       {isDark ? (
         <Sun className="h-5 w-5 text-yellow-500" />
