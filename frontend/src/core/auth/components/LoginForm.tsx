@@ -22,7 +22,7 @@ const LoginForm: React.FC = () => {
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label htmlFor="email">Email address</Label>
-            <div className="relative rounded-md shadow-sm">
+            <div className="relative rounded-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Mail className="h-5 w-5 text-muted-foreground" />
               </div>
@@ -40,7 +40,7 @@ const LoginForm: React.FC = () => {
 
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <div className="relative rounded-md shadow-sm">
+            <div className="relative rounded-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-muted-foreground" />
               </div>
