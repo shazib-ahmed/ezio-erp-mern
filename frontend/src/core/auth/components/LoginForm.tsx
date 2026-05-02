@@ -7,18 +7,43 @@ import { Label } from '@/shared/ui/label';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Checkbox } from '@/shared/ui/checkbox';
 
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { login, clearError } from '@/core/auth/slice/authSlice';
+import { useNavigate } from 'react-router-dom';
+import { Alert, AlertDescription } from '@/shared/ui/alert';
+import { AlertCircle, Loader2 } from 'lucide-react';
+
 const LoginForm: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const { loading, error } = useAppSelector((state) => state.auth);
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  React.useEffect(() => {
+    return () => {
+      dispatch(clearError());
+    };
+  }, [dispatch]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({ email, password });
+    const resultAction = await dispatch(login({ email, password }));
+    if (login.fulfilled.match(resultAction)) {
+      navigate('/dashboard');
+    }
   };
 
   return (
     <Card className="border-border/40">
       <CardContent className="pt-8">
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label htmlFor="email">Email address</Label>
@@ -71,9 +96,18 @@ const LoginForm: React.FC = () => {
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-12 text-md font-semibold">
-            Sign in
-            <ArrowRight className="ml-2 h-4 w-4" />
+          <Button type="submit" className="w-full h-12 text-md font-semibold" disabled={loading}>
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Signing in...</span>
+              </div>
+            ) : (
+              <>
+                Sign in
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </>
+            )}
           </Button>
         </form>
 

@@ -1,10 +1,9 @@
 import React from 'react';
 import { Skeleton } from '@/shared/ui/skeleton';
-import { MainLayout } from '@/shared/components/layout/MainLayout';
 
 export const TableSkeleton: React.FC = () => {
   return (
-    <MainLayout>
+    <div className="p-0">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div className="space-y-2">
           <Skeleton className="h-10 w-64" />
@@ -41,6 +40,6 @@ export const TableSkeleton: React.FC = () => {
           ))}
         </div>
       </div>
-    </MainLayout>
+    </div>
   );
 };

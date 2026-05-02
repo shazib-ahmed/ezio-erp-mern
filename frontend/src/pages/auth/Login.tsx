@@ -2,8 +2,19 @@ import React from 'react';
 import { Building2 } from 'lucide-react';
 import { LoginForm } from '@/core/auth/components/LoginForm';
 import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher';
+import { useAppSelector } from '@/app/hooks';
+import { useNavigate } from 'react-router-dom';
 
 const Login: React.FC = () => {
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+
   return (
     <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-foreground font-jakarta">
       <ThemeSwitcher />

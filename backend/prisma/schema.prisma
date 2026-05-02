@@ -39,6 +39,10 @@ model Tenant {
   activeModules Module[]  @relation("TenantModules")
   plan          Plan      @default(FREE)
   
+  // Owner/Admin of the tenant
+  ownerId       String?   @unique
+  owner         User?     @relation("TenantOwner", fields: [ownerId], references: [id])
+  
   // Relations to business data
   users         User[]
   products      Product[]
@@ -47,6 +51,7 @@ model Tenant {
   expenses      Expense[]
   transactions  Transaction[]
   accounts      Account[]
+  roles         Role[]
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -63,17 +68,44 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   password  String
-  role      UserRole @default(STAFF)
+  
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  
+  ownedTenant Tenant? @relation("TenantOwner")
+  
   createdAt DateTime @default(now())
 }
 
-enum UserRole {
-  SUPER_ADMIN
-  ADMIN
-  MANAGER
-  STAFF
+model Role {
+  id          String       @id @default(uuid())
+  name        String       // e.g., SUPER_ADMIN, ADMIN, MANAGER
+  description String?
+  
+  permissions Permission[]
+  users       User[]
+  
+  tenantId    String?      // Null for System Roles (SUPER_ADMIN)
+  tenant      Tenant?      @relation(fields: [tenantId], references: [id])
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([name, tenantId])
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique // e.g., "Create Product"
+  code        String   @unique // e.g., "PRODUCT_CREATE"
+  module      String   // e.g., "INVENTORY"
+  
+  roles       Role[]
+  
+  createdAt   DateTime @default(now())
 }
 
 // ==========================================
