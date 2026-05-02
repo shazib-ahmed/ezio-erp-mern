@@ -28,6 +28,9 @@ const Customers = lazy(() => import('@/pages/sales/Customers'));
 const Returns = lazy(() => import('@/pages/sales/Returns'));
 const SettingsPage = lazy(() => import('@/pages/settings/Settings'));
 
+const Tenants = lazy(() => import('@/pages/admin/Tenants'));
+const Industries = lazy(() => import('@/pages/admin/Industries'));
+
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
@@ -200,11 +203,30 @@ const AppRoutes: React.FC = () => {
         } 
       />
 
+      {/* Super Admin Routes */}
+      <Route 
+        path="/admin/tenants" 
+        element={
+          <Suspense fallback={<TableSkeleton />}>
+            <Tenants />
+          </Suspense>
+        } 
+      />
+      <Route 
+        path="/admin/industries" 
+        element={
+          <Suspense fallback={<TableSkeleton />}>
+            <Industries />
+          </Suspense>
+        } 
+      />
+
       {/* Redirects */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/finance" element={<Navigate to="/finance/ledger" replace />} />
       <Route path="/hrm" element={<Navigate to="/hrm/employees" replace />} />
       <Route path="/sales" element={<Navigate to="/sales/orders" replace />} />
+      <Route path="/admin" element={<Navigate to="/admin/tenants" replace />} />
     </Routes>
   );
 };
