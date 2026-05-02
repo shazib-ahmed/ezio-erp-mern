@@ -1,8 +1,11 @@
-import React, { lazy } from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from '@/pages/auth/Login';
 import Signup from '@/pages/auth/Signup';
-import Dashboard from '@/pages/dashboard/Dashboard';
+import { DashboardSkeleton } from '@/shared/components/skeletons/DashboardSkeleton';
+import { TableSkeleton } from '@/shared/components/skeletons/TableSkeleton';
+
+const Dashboard = lazy(() => import('@/pages/dashboard/Dashboard'));
 const Inventory = lazy(() => import('@/pages/inventory/Inventory'));
 const Ledger = lazy(() => import('@/pages/finance/Ledger'));
 const Accounts = lazy(() => import('@/pages/finance/Accounts'));
@@ -33,110 +36,117 @@ const AppRoutes: React.FC = () => {
       <Route path="/signup" element={<Signup />} />
 
       {/* Internal Routes */}
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route 
+        path="/dashboard" 
+        element={
+          <Suspense fallback={<DashboardSkeleton />}>
+            <Dashboard />
+          </Suspense>
+        } 
+      />
       <Route 
         path="/inventory" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <Inventory />
-          </React.Suspense>
+          </Suspense>
         } 
       />
       <Route 
         path="/finance/ledger" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <Ledger />
-          </React.Suspense>
+          </Suspense>
         } 
       />
       <Route 
         path="/finance/accounts" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <Accounts />
-          </React.Suspense>
+          </Suspense>
         } 
       />
       <Route 
         path="/finance/payable-receivable" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <PayableReceivable />
-          </React.Suspense>
+          </Suspense>
         } 
       />
       <Route 
         path="/finance/assets" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <Assets />
-          </React.Suspense>
+          </Suspense>
         } 
       />
       <Route 
         path="/finance/tax" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <Tax />
-          </React.Suspense>
+          </Suspense>
         } 
       />
       <Route 
         path="/finance/reports" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <Reports />
-          </React.Suspense>
+          </Suspense>
         } 
       />
 
       <Route 
         path="/hrm/employees" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <Employees />
-          </React.Suspense>
+          </Suspense>
         } 
       />
       <Route 
         path="/hrm/attendance" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <Attendance />
-          </React.Suspense>
+          </Suspense>
         } 
       />
       <Route 
         path="/hrm/leave" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <LeaveManagement />
-          </React.Suspense>
+          </Suspense>
         } 
       />
       <Route 
         path="/hrm/payroll" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <Payroll />
-          </React.Suspense>
+          </Suspense>
         } 
       />
       <Route 
         path="/hrm/roles" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <RolesPermissions />
-          </React.Suspense>
+          </Suspense>
         } 
       />
       <Route 
         path="/hrm/documents" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <DocumentVault />
-          </React.Suspense>
+          </Suspense>
         } 
       />
 
@@ -144,49 +154,49 @@ const AppRoutes: React.FC = () => {
       <Route 
         path="/sales/quotations" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <Quotations />
-          </React.Suspense>
+          </Suspense>
         } 
       />
       <Route 
         path="/sales/orders" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <Orders />
-          </React.Suspense>
+          </Suspense>
         } 
       />
       <Route 
         path="/sales/pos" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <POS />
-          </React.Suspense>
+          </Suspense>
         } 
       />
       <Route 
         path="/sales/customers" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <Customers />
-          </React.Suspense>
+          </Suspense>
         } 
       />
       <Route 
         path="/sales/returns" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <Returns />
-          </React.Suspense>
+          </Suspense>
         } 
       />
       <Route 
         path="/settings" 
         element={
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<TableSkeleton />}>
             <SettingsPage />
-          </React.Suspense>
+          </Suspense>
         } 
       />
 
