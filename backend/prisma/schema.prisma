@@ -1,0 +1,126 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// --- CORE SYSTEM TABLES ---
+
+model Industry {
+  id          String   @id @default(uuid())
+  name        String   @unique // e.g., "Garments", "Pharmacy", "Retail"
+  description String?
+  modules     Module[] // Modules linked to this industry
+  tenants     Tenant[]
+  createdAt   DateTime @default(now())
+}
+
+model Module {
+  id          String     @id @default(uuid())
+  name        String     @unique // e.g., "Inventory", "HRM", "Finance"
+  code        String     @unique // e.g., "INV", "HRM", "FIN"
+  industries  Industry[]
+  tenants     Tenant[]   @relation("TenantModules")
+  createdAt   DateTime   @default(now())
+}
+
+model Tenant {
+  id            String    @id @default(uuid())
+  name          String
+  domain        String?   @unique
+  industryId    String
+  industry      Industry  @relation(fields: [industryId], references: [id])
+  plan          Plan      @default(FREE)
+  activeModules Module[]  @relation("TenantModules")
+  users         User[]
+  
+  // Business Data Relations
+  products      Product[]
+  accounts      Account[]
+  employees     Employee[]
+  customers     Customer[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum Plan {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      UserRole @default(STAFF)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+enum UserRole {
+  SUPER_ADMIN // System Owner
+  ADMIN       // Tenant Admin
+  MANAGER
+  STAFF
+}
+
+// --- FINANCE MODULE ---
+
+model Account {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   // Chart of Accounts Code
+  type      String   // Asset, Liability, Equity, Income, Expense
+  balance   Decimal  @default(0.0)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+// --- INVENTORY MODULE ---
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  sku         String
+  price       Decimal
+  stock       Int      @default(0)
+  category    String?
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  
+  // Industry specific fields can be handled via JSON or specific tables
+  attributes  Json?    // Stores size, color, expiry date, etc.
+}
+
+// --- HRM MODULE ---
+
+model Employee {
+  id          String   @id @default(uuid())
+  firstName   String
+  lastName    String
+  designation String
+  salary      Decimal
+  joinDate    DateTime
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+// --- SALES/CRM MODULE ---
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+}
