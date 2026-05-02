@@ -11,6 +11,13 @@ const Assets = lazy(() => import('@/pages/finance/Assets'));
 const Tax = lazy(() => import('@/pages/finance/Tax'));
 const Reports = lazy(() => import('@/pages/finance/Reports'));
 
+const Employees = lazy(() => import('@/pages/hrm/Employees'));
+const Attendance = lazy(() => import('@/pages/hrm/Attendance'));
+const LeaveManagement = lazy(() => import('@/pages/hrm/LeaveManagement'));
+const Payroll = lazy(() => import('@/pages/hrm/Payroll'));
+const RolesPermissions = lazy(() => import('@/pages/hrm/RolesPermissions'));
+const DocumentVault = lazy(() => import('@/pages/hrm/DocumentVault'));
+
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
@@ -77,9 +84,59 @@ const AppRoutes: React.FC = () => {
         } 
       />
 
-      {/* Redirect root to dashboard */}
+      <Route 
+        path="/hrm/employees" 
+        element={
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <Employees />
+          </React.Suspense>
+        } 
+      />
+      <Route 
+        path="/hrm/attendance" 
+        element={
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <Attendance />
+          </React.Suspense>
+        } 
+      />
+      <Route 
+        path="/hrm/leave" 
+        element={
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <LeaveManagement />
+          </React.Suspense>
+        } 
+      />
+      <Route 
+        path="/hrm/payroll" 
+        element={
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <Payroll />
+          </React.Suspense>
+        } 
+      />
+      <Route 
+        path="/hrm/roles" 
+        element={
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <RolesPermissions />
+          </React.Suspense>
+        } 
+      />
+      <Route 
+        path="/hrm/documents" 
+        element={
+          <React.Suspense fallback={<div>Loading...</div>}>
+            <DocumentVault />
+          </React.Suspense>
+        } 
+      />
+
+      {/* Redirects */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/finance" element={<Navigate to="/finance/ledger" replace />} />
+      <Route path="/hrm" element={<Navigate to="/hrm/employees" replace />} />
     </Routes>
   );
 };

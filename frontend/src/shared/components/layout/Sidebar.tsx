@@ -39,7 +39,19 @@ const navItems: NavItem[] = [
     ]
   },
   { icon: ShoppingCart, label: 'Sales', path: '/sales' },
-  { icon: Users, label: 'HRM', path: '/hrm' },
+  { 
+    icon: Users, 
+    label: 'HRM', 
+    path: '/hrm',
+    subItems: [
+      { label: 'Employees', path: '/hrm/employees' },
+      { label: 'Attendance', path: '/hrm/attendance' },
+      { label: 'Leave Management', path: '/hrm/leave' },
+      { label: 'Payroll', path: '/hrm/payroll' },
+      { label: 'Roles & Permissions', path: '/hrm/roles' },
+      { label: 'Document Vault', path: '/hrm/documents' },
+    ]
+  },
   { icon: Building2, label: 'Procurement', path: '/procurement' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];

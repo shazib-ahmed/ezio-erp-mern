@@ -70,13 +70,13 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="md:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{initialData ? 'Edit Account' : 'Add New Account'}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2 col-span-2">
               <Label htmlFor="name">Account Name</Label>
               <Input 
