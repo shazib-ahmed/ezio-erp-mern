@@ -1,38 +1,155 @@
-.App {
-  text-align: center;
-}
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+@layer base {
+  :root {
+    /** Theme primary colors */
+    --clr-primary-a0: #14e610;
+    --clr-primary-a10: #4bea44;
+    --clr-primary-a20: #68ed61;
+    --clr-primary-a30: #80f079;
+    --clr-primary-a40: #96f38e;
+    --clr-primary-a50: #a9f5a2;
+
+    /** Theme surface colors */
+    --clr-surface-a0: #121212;
+    --clr-surface-a10: #252525;
+    --clr-surface-a20: #393939;
+    --clr-surface-a30: #4f4f4f;
+    --clr-surface-a40: #666;
+    --clr-surface-a50: #7d7d7d;
+
+    /** Theme tonal surface colors */
+    --clr-surface-tonal-a0: #192418;
+    --clr-surface-tonal-a10: #2c362b;
+    --clr-surface-tonal-a20: #404a3f;
+    --clr-surface-tonal-a30: #555e54;
+    --clr-surface-tonal-a40: #6c736b;
+    --clr-surface-tonal-a50: #828982;
+
+    /** Success colors */
+    --clr-success-a0: #22946e;
+    --clr-success-a10: #5ba989;
+    --clr-success-a20: #86bfa6;
+
+    /** Warning colors */
+    --clr-warning-a0: #a87a2a;
+    --clr-warning-a10: #ba945a;
+    --clr-warning-a20: #cbae84;
+
+    /** Danger colors */
+    --clr-danger-a0: #9c2121;
+    --clr-danger-a10: #b4544c;
+    --clr-danger-a20: #ca7f77;
+
+    /** Info colors */
+    --clr-info-a0: #21498a;
+    --clr-info-a10: #4b6ca2;
+    --clr-info-a20: #7590ba;
+
+    /* --- LIGHT MODE --- */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 7%; /* surface-a0 */
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 7%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 7%;
+
+    --primary: 119 82% 48%; /* clr-primary-a0 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 7%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 120 19% 95%;
+    --accent-foreground: 119 82% 48%;
+
+    --destructive: 0 65% 37%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 119 82% 48%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 0 0% 7%; /* surface-a0 */
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 119 82% 48%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 0 0% 15%; /* surface-a10 */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 63%;
+
+    --accent: 120 7% 20%; /* tonal-a0 */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 65% 37%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 22%; /* surface-a20 */
+    --input: 0 0% 22%;
+    --ring: 119 82% 48%;
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
-.App-link {
-  color: #61dafb;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+@layer base {
+  * {
+    @apply border-border;
   }
-  to {
-    transform: rotate(360deg);
+  body {
+    @apply bg-background text-foreground;
   }
+}
+
+body {
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
 }

@@ -1,17 +1,14 @@
 import React from 'react';
+import { BrowserRouter } from 'react-router-dom';
+import AppRoutes from '@/routes/AppRoutes';
+import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher';
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold text-blue-600 mb-4">
-          Ezio ERP
-        </h1>
-        <p className="text-gray-600">
-          Welcome to Ezio ERP. Tailwind CSS and TypeScript are now configured!
-        </p>
-      </div>
-    </div>
+    <BrowserRouter>
+      <ThemeSwitcher />
+      <AppRoutes />
+    </BrowserRouter>
   );
 }
 

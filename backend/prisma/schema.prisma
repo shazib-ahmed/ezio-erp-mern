@@ -1,5 +1,4 @@
-// This is your Prisma schema file
-
+// generator and datasource
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,42 +8,46 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- CORE SYSTEM TABLES ---
+// ==========================================
+// 1. SYSTEM & TENANCY (The Foundation)
+// ==========================================
 
 model Industry {
-  id          String   @id @default(uuid())
-  name        String   @unique // e.g., "Garments", "Pharmacy", "Retail"
+  id          String    @id @default(uuid())
+  name        String    @unique // e.g., Garments, Pharmacy, Retail, IT
   description String?
-  modules     Module[] // Modules linked to this industry
+  modules     Module[]  // Modules available for this industry
   tenants     Tenant[]
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 }
 
 model Module {
   id          String     @id @default(uuid())
-  name        String     @unique // e.g., "Inventory", "HRM", "Finance"
-  code        String     @unique // e.g., "INV", "HRM", "FIN"
+  name        String     @unique // e.g., Inventory, HRM, POS, Finance
+  code        String     @unique // e.g., MOD_INV, MOD_POS
   industries  Industry[]
   tenants     Tenant[]   @relation("TenantModules")
-  createdAt   DateTime   @default(now())
 }
 
 model Tenant {
   id            String    @id @default(uuid())
   name          String
-  domain        String?   @unique
+  companyEmail  String    @unique
+  address       String?
   industryId    String
   industry      Industry  @relation(fields: [industryId], references: [id])
-  plan          Plan      @default(FREE)
   activeModules Module[]  @relation("TenantModules")
+  plan          Plan      @default(FREE)
+  
+  // Relations to business data
   users         User[]
-  
-  // Business Data Relations
   products      Product[]
-  accounts      Account[]
-  employees     Employee[]
   customers     Customer[]
-  
+  sales         Sale[]
+  expenses      Expense[]
+  transactions  Transaction[]
+  accounts      Account[]
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -67,60 +70,151 @@ model User {
 }
 
 enum UserRole {
-  SUPER_ADMIN // System Owner
-  ADMIN       // Tenant Admin
+  SUPER_ADMIN
+  ADMIN
   MANAGER
   STAFF
 }
 
-// --- FINANCE MODULE ---
-
-model Account {
-  id        String   @id @default(uuid())
-  name      String
-  code      String   // Chart of Accounts Code
-  type      String   // Asset, Liability, Equity, Income, Expense
-  balance   Decimal  @default(0.0)
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-}
-
-// --- INVENTORY MODULE ---
+// ==========================================
+// 2. INVENTORY MODULE
+// ==========================================
 
 model Product {
-  id          String   @id @default(uuid())
-  name        String
-  sku         String
-  price       Decimal
-  stock       Int      @default(0)
-  category    String?
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  id            String   @id @default(uuid())
+  name          String
+  sku           String
+  barcode       String?
+  purchasePrice Decimal  @db.Decimal(18, 2)
+  salePrice     Decimal  @db.Decimal(18, 2)
+  stock         Int      @default(0)
+  unit          String   @default("pcs") // pcs, kg, ltr
+  attributes    Json?    // For Industry Specific (e.g., Size: XL, Color: Blue)
   
-  // Industry specific fields can be handled via JSON or specific tables
-  attributes  Json?    // Stores size, color, expiry date, etc.
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  saleItems     SaleItem[]
 }
 
-// --- HRM MODULE ---
-
-model Employee {
-  id          String   @id @default(uuid())
-  firstName   String
-  lastName    String
-  designation String
-  salary      Decimal
-  joinDate    DateTime
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
-}
-
-// --- SALES/CRM MODULE ---
+// ==========================================
+// 3. POS & SALES (With Baki Khata Logic)
+// ==========================================
 
 model Customer {
-  id        String   @id @default(uuid())
-  name      String
-  email     String?
-  phone     String?
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  id          String   @id @default(uuid())
+  name        String
+  phone       String?
+  email       String?
+  address     String?
+  totalDue    Decimal  @default(0.0) @db.Decimal(18, 2) // Total Outstanding Baki
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  sales       Sale[]
+  transactions Transaction[]
+}
+
+model Sale {
+  id              String         @id @default(uuid())
+  invoiceNo       String         @unique // e.g., INV-2026-0001
+  totalAmount     Decimal        @db.Decimal(18, 2)
+  discount        Decimal        @default(0.0) @db.Decimal(18, 2)
+  payableAmount   Decimal        @db.Decimal(18, 2)
+  paidAmount      Decimal        @db.Decimal(18, 2)
+  dueAmount       Decimal        @default(0.0) @db.Decimal(18, 2)
+  
+  status          PaymentStatus  @default(PAID)
+  tenantId        String
+  tenant          Tenant         @relation(fields: [tenantId], references: [id])
+  customerId      String?
+  customer        Customer?      @relation(fields: [customerId], references: [id])
+  items           SaleItem[]
+  transactions    Transaction[]
+  
+  createdAt       DateTime       @default(now())
+}
+
+model SaleItem {
+  id          String   @id @default(uuid())
+  saleId      String
+  sale        Sale     @relation(fields: [saleId], references: [id])
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  quantity    Int
+  unitPrice   Decimal  @db.Decimal(18, 2)
+  subTotal    Decimal  @db.Decimal(18, 2)
+}
+
+enum PaymentStatus {
+  PAID
+  PARTIAL
+  DUE
+}
+
+// ==========================================
+// 4. TRANSACTION & LEDGER (Professional Tracking)
+// ==========================================
+
+model Transaction {
+  id              String          @id @default(uuid())
+  trxId           String          @unique // e.g., TRX-987654321
+  amount          Decimal         @db.Decimal(18, 2)
+  type            TransactionType 
+  purpose         String          // e.g., "Product Sale", "Baki Payment", "Rent"
+  method          PaymentMethod   @default(CASH)
+  referenceNo     String?         // Check No, Bkash TrxID, Bank Ref
+  note            String?
+  
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id])
+  
+  // Relations (Optional based on transaction source)
+  saleId          String?
+  sale            Sale?           @relation(fields: [saleId], references: [id])
+  expenseId       String?
+  expense         Expense?        @relation(fields: [expenseId], references: [id])
+  customerId      String?
+  customer        Customer?       @relation(fields: [customerId], references: [id])
+  
+  createdAt       DateTime        @default(now())
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  BKASH
+  NAGAD
+  CARD
+}
+
+// ==========================================
+// 5. EXPENSE & ACCOUNTS
+// ==========================================
+
+model Expense {
+  id              String   @id @default(uuid())
+  title           String
+  category        String   // e.g., Rent, Utility, Salary
+  amount          Decimal  @db.Decimal(18, 2)
+  expenseDate     DateTime @default(now())
+  
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  transactions    Transaction[]
+}
+
+model Account {
+  id          String   @id @default(uuid())
+  name        String   // e.g., Main Cash, DBBL Bank, Business Petty Cash
+  accountType String   // CASH, BANK, MOBILE_WALLET
+  balance     Decimal  @default(0.0) @db.Decimal(18, 2)
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  updatedAt   DateTime @updatedAt
 }
