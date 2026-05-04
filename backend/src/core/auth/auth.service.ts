@@ -17,6 +17,7 @@ export class AuthService {
       businessName, 
       companyEmail, 
       industryId, 
+      businessPhone,
       adminName, 
       username,
       adminEmail, 
@@ -39,18 +40,18 @@ export class AuthService {
       throw new ConflictException('Admin email, username or phone number already exists');
     }
 
-    // 2. Check if business name or phone exists
+    // 2. Check if business name or business phone exists
     const existingTenant = await this.prisma.tenant.findFirst({
       where: { 
         OR: [
           { name: businessName },
-          { phone: phone }
+          { phone: businessPhone }
         ]
       }
     });
 
     if (existingTenant) {
-      throw new ConflictException('Business name or phone number already exists');
+      throw new ConflictException('Business name or business phone number already exists');
     }
 
     // 3. Create User first
@@ -88,7 +89,7 @@ export class AuthService {
     const tenant = await this.prisma.tenant.create({
       data: {
         name: businessName,
-        phone: phone,
+        phone: businessPhone,
         tenantId: user.id, 
         industryId: Number(industryId),
         activeModules: {
@@ -104,7 +105,7 @@ export class AuthService {
       }
     });
 
-    // 6. Link User to Role and Tenant via junction tables
+    // 7. Link User to Role and Tenant via junction tables
     const updatedUser = await this.prisma.user.update({
       where: { id: user.id },
       data: {
@@ -217,7 +218,7 @@ export class AuthService {
     const activeUserTenant = user.tenants[0];
     const activeTenantId = activeUserTenant?.tenant.id || 0;
     
-    let activeModules = [];
+    let activeModules: any[] = [];
     if (activeUserTenant) {
       const tenantWithModules = await this.prisma.tenant.findUnique({
         where: { id: activeTenantId },

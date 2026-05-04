@@ -7,6 +7,7 @@ import { IndustryModule } from './core/industry/industry.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './core/auth/auth.module';
 import { JwtAuthGuard } from './core/auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@/common/guards/permissions.guard';
 
 @Module({
   imports: [PrismaModule, IndustryModule, AuthModule],
@@ -16,6 +17,10 @@ import { JwtAuthGuard } from './core/auth/guards/jwt-auth.guard';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PermissionsGuard,
     },
   ],
 })

@@ -178,9 +178,12 @@ async function main() {
     create: { name: 'TENANT' },
   });
 
-  // 3. LINK ALL PERMISSIONS TO SUPER_ADMIN
-  console.log('Linking all permissions to SUPER_ADMIN...');
+  // 3. LINK PERMISSIONS TO ROLES
+  console.log('Linking permissions to roles...');
+  const systemModuleCodes = ['MOD_SYSTEM'];
+  
   for (const p of allPermissions) {
+    // Super Admin gets everything
     await (prisma as any).rolePermission.upsert({
       where: { 
         roleId_permissionId: {
@@ -191,25 +194,73 @@ async function main() {
       update: {},
       create: { roleId: superAdminRole.id, permissionId: p.id }
     });
+
+    // Tenant role gets non-system permissions
+    const permModule = modulesData.find(m => m.features.some(f => f.permissions.some(per => per.code === p.code)));
+    if (permModule && !systemModuleCodes.includes(permModule.code)) {
+      await (prisma as any).rolePermission.upsert({
+        where: { 
+          roleId_permissionId: {
+            roleId: tenantRole.id,
+            permissionId: p.id
+          }
+        },
+        update: {},
+        create: { roleId: tenantRole.id, permissionId: p.id }
+      });
+    }
   }
 
   // 4. SEED INDUSTRIES & LINK MODULES
+  const industriesData = [
+    { name: 'Technology', description: 'System Administration and IT Services' },
+    { name: 'Garments & Textile', description: 'Style, Color, Size Matrix' },
+    { name: 'Pharmaceuticals', description: 'Medicine manufacturing and chemical processing' },
+    { name: 'Food & Beverage', description: 'Food processing and beverage production' },
+    { name: 'Automobile', description: 'Vehicle parts and assembly' },
+    { name: 'Electronics Manufacturing', description: 'Gagdet and electronics assembly' },
+    { name: 'E-commerce', description: 'Online shops and digital marketplaces' },
+    { name: 'Super Shop', description: 'Grocery chains and supermarkets' },
+    { name: 'Fashion & Lifestyle', description: 'Apparel outlets and lifestyle showrooms' },
+    { name: 'Electronics Retail', description: 'Electronics dealers and showrooms' },
+    { name: 'FMCG Distribution', description: 'Fast Moving Consumer Goods distribution' },
+    { name: 'Hospital & Clinic', description: 'Patient and Doctor management system' },
+    { name: 'Diagnostic Center', description: 'Lab reports and diagnostic management' },
+    { name: 'Pharmacy Chain', description: 'Drug generic names and Expiry tracking' },
+    { name: 'School & College', description: 'Student IDs, Fee collection, and Exams' },
+    { name: 'University', description: 'Higher education academic management' },
+    { name: 'Coaching Center', description: 'Skill development and tutoring' },
+    { name: 'IT & Software', description: 'Project management and software services' },
+    { name: 'Construction & Real Estate', description: 'Plot/Flat mapping and Installment schedules' },
+    { name: 'Digital Marketing', description: 'Agency management and client campaigns' },
+    { name: 'Consultancy Firm', description: 'Law, Audit, and Advisory firms' },
+    { name: 'Hotel & Resort', description: 'Booking and hospitality management' },
+    { name: 'Restaurant & Cafe', description: 'POS, Table booking, and KOT management' },
+    { name: 'Travel Agency', description: 'Tour and travel booking services' },
+    { name: 'Courier Service', description: 'Parcel tracking and delivery management' },
+    { name: 'Shipping & Freight', description: 'International shipping and logistics' },
+    { name: 'Warehousing', description: 'Storage and supply chain management' },
+  ];
+
   console.log('Seeding industries...');
-  await (prisma as any).industry.upsert({
-    where: { name: 'Technology' },
-    update: {
-      modules: {
-        set: createdModules.map(m => ({ id: m.id }))
+  for (const ind of industriesData) {
+    await (prisma as any).industry.upsert({
+      where: { name: ind.name },
+      update: { 
+        description: ind.description,
+        modules: {
+          set: createdModules.map(m => ({ id: m.id }))
+        }
+      },
+      create: { 
+        name: ind.name, 
+        description: ind.description,
+        modules: {
+          connect: createdModules.map(m => ({ id: m.id }))
+        }
       }
-    },
-    create: { 
-      name: 'Technology', 
-      description: 'IT and Software',
-      modules: {
-        connect: createdModules.map(m => ({ id: m.id }))
-      }
-    }
-  });
+    });
+  }
 
   // 5. CREATE SUPER ADMIN USER (GLOBAL)
   console.log('Creating Super Admin user...');

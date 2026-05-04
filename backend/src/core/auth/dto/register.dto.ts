@@ -14,6 +14,10 @@ export class RegisterDto {
   industryId: string;
 
   @IsString()
+  @IsNotEmpty({ message: 'Business phone is required' })
+  businessPhone: string;
+
+  @IsString()
   @IsNotEmpty({ message: 'Admin name is required' })
   adminName: string;
 

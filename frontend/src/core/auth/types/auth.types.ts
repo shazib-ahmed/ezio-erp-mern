@@ -3,6 +3,7 @@ export interface Module {
   name: string;
   code: string;
   icon: string | null;
+  features?: Feature[];
 }
 
 export interface Feature {
@@ -44,8 +45,11 @@ export interface UserRole {
 
 export interface Tenant {
   id: number;
+  name: string;
+  phone: string;
   tenantId: number; // The Owner User ID
   industryId: number;
+  activeModules?: Module[];
 }
 
 export interface UserTenant {
@@ -57,9 +61,14 @@ export interface UserTenant {
 
 export interface User {
   id: number;
+  name: string;
+  username: string;
   email: string;
+  phone: string;
   roles: UserRole[];
   tenants: UserTenant[];
+  permissions?: string[]; // Flat permissions array from backend
+  activeModules?: Module[]; // Active modules for the current tenant
 }
 
 export interface AuthState {
@@ -68,5 +77,7 @@ export interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   loading: boolean;
+  isInitializing: boolean;
+  isSubmitting: boolean;
   error: string | null;
 }

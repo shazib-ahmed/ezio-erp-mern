@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardSkeleton } from '@/shared/components/skeletons/DashboardSkeleton';
 import { TableSkeleton } from '@/shared/components/skeletons/TableSkeleton';
 import ProtectedRoute from './ProtectedRoute';
+import PermissionGuard from './PermissionGuard';
+import { Loader2 } from 'lucide-react';
 
 // Lazy load components
 const Dashboard = lazy(() => import('@/pages/dashboard/Dashboard'));
@@ -37,7 +39,11 @@ const AppRoutes: React.FC = () => {
       <Route 
         path="/login" 
         element={
-          <Suspense fallback={<DashboardSkeleton />}>
+          <Suspense fallback={
+            <div className="h-screen w-screen flex items-center justify-center bg-background">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          }>
             <LoginPage />
           </Suspense>
         } 
@@ -45,7 +51,11 @@ const AppRoutes: React.FC = () => {
       <Route 
         path="/signup" 
         element={
-          <Suspense fallback={<DashboardSkeleton />}>
+          <Suspense fallback={
+            <div className="h-screen w-screen flex items-center justify-center bg-background">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          }>
             <SignupPage />
           </Suspense>
         } 
@@ -65,47 +75,49 @@ const AppRoutes: React.FC = () => {
         <Route 
           path="/inventory" 
           element={
-            <Suspense fallback={<TableSkeleton />}>
-              <Inventory />
-            </Suspense>
+            <PermissionGuard moduleCode="MOD_INVENTORY" permissions={['PRODUCT_VIEW']}>
+              <Suspense fallback={<TableSkeleton />}>
+                <Inventory />
+              </Suspense>
+            </PermissionGuard>
           } 
         />
 
         {/* Finance Sub-routes */}
         <Route path="/finance">
           <Route index element={<Navigate to="/finance/ledger" replace />} />
-          <Route path="ledger" element={<Suspense fallback={<TableSkeleton />}><Ledger /></Suspense>} />
-          <Route path="accounts" element={<Suspense fallback={<TableSkeleton />}><Accounts /></Suspense>} />
-          <Route path="payable-receivable" element={<Suspense fallback={<TableSkeleton />}><PayableReceivable /></Suspense>} />
-          <Route path="assets" element={<Suspense fallback={<TableSkeleton />}><Assets /></Suspense>} />
-          <Route path="tax" element={<Suspense fallback={<TableSkeleton />}><Tax /></Suspense>} />
-          <Route path="reports" element={<Suspense fallback={<TableSkeleton />}><FinanceReports /></Suspense>} />
+          <Route path="ledger" element={<PermissionGuard moduleCode="MOD_FINANCE" permissions={['TRX_VIEW']}><Suspense fallback={<TableSkeleton />}><Ledger /></Suspense></PermissionGuard>} />
+          <Route path="accounts" element={<PermissionGuard moduleCode="MOD_FINANCE" permissions={['ACCOUNT_VIEW']}><Suspense fallback={<TableSkeleton />}><Accounts /></Suspense></PermissionGuard>} />
+          <Route path="payable-receivable" element={<PermissionGuard moduleCode="MOD_FINANCE" permissions={['TRX_VIEW']}><Suspense fallback={<TableSkeleton />}><PayableReceivable /></Suspense></PermissionGuard>} />
+          <Route path="assets" element={<PermissionGuard moduleCode="MOD_FINANCE" permissions={['TRX_VIEW']}><Suspense fallback={<TableSkeleton />}><Assets /></Suspense></PermissionGuard>} />
+          <Route path="tax" element={<PermissionGuard moduleCode="MOD_FINANCE" permissions={['TRX_VIEW']}><Suspense fallback={<TableSkeleton />}><Tax /></Suspense></PermissionGuard>} />
+          <Route path="reports" element={<PermissionGuard moduleCode="MOD_FINANCE" permissions={['TRX_VIEW']}><Suspense fallback={<TableSkeleton />}><FinanceReports /></Suspense></PermissionGuard>} />
         </Route>
 
         {/* Sales Sub-routes */}
         <Route path="/sales">
           <Route index element={<Navigate to="/sales/orders" replace />} />
-          <Route path="quotations" element={<Suspense fallback={<TableSkeleton />}><Quotations /></Suspense>} />
-          <Route path="orders" element={<Suspense fallback={<TableSkeleton />}><Orders /></Suspense>} />
-          <Route path="pos" element={<Suspense fallback={<TableSkeleton />}><POS /></Suspense>} />
-          <Route path="customers" element={<Suspense fallback={<TableSkeleton />}><Customers /></Suspense>} />
-          <Route path="returns" element={<Suspense fallback={<TableSkeleton />}><Returns /></Suspense>} />
+          <Route path="quotations" element={<PermissionGuard moduleCode="MOD_SALES" permissions={['SALE_VIEW']}><Suspense fallback={<TableSkeleton />}><Quotations /></Suspense></PermissionGuard>} />
+          <Route path="orders" element={<PermissionGuard moduleCode="MOD_SALES" permissions={['SALE_VIEW']}><Suspense fallback={<TableSkeleton />}><Orders /></Suspense></PermissionGuard>} />
+          <Route path="pos" element={<PermissionGuard moduleCode="MOD_SALES" permissions={['SALE_CREATE']}><Suspense fallback={<TableSkeleton />}><POS /></Suspense></PermissionGuard>} />
+          <Route path="customers" element={<PermissionGuard moduleCode="MOD_SALES" permissions={['CUSTOMER_VIEW']}><Suspense fallback={<TableSkeleton />}><Customers /></Suspense></PermissionGuard>} />
+          <Route path="returns" element={<PermissionGuard moduleCode="MOD_SALES" permissions={['SALE_VIEW']}><Suspense fallback={<TableSkeleton />}><Returns /></Suspense></PermissionGuard>} />
         </Route>
 
         {/* HRM Sub-routes */}
         <Route path="/hrm">
           <Route index element={<Navigate to="/hrm/employees" replace />} />
-          <Route path="employees" element={<Suspense fallback={<TableSkeleton />}><Employees /></Suspense>} />
-          <Route path="attendance" element={<Suspense fallback={<TableSkeleton />}><Attendance /></Suspense>} />
-          <Route path="leave" element={<Suspense fallback={<TableSkeleton />}><Leave /></Suspense>} />
-          <Route path="payroll" element={<Suspense fallback={<TableSkeleton />}><Payroll /></Suspense>} />
-          <Route path="roles" element={<Suspense fallback={<TableSkeleton />}><Roles /></Suspense>} />
-          <Route path="documents" element={<Suspense fallback={<TableSkeleton />}><Documents /></Suspense>} />
+          <Route path="employees" element={<PermissionGuard moduleCode="MOD_AUTH" permissions={['USER_VIEW']}><Suspense fallback={<TableSkeleton />}><Employees /></Suspense></PermissionGuard>} />
+          <Route path="attendance" element={<PermissionGuard moduleCode="MOD_AUTH" permissions={['USER_VIEW']}><Suspense fallback={<TableSkeleton />}><Attendance /></Suspense></PermissionGuard>} />
+          <Route path="leave" element={<PermissionGuard moduleCode="MOD_AUTH" permissions={['USER_VIEW']}><Suspense fallback={<TableSkeleton />}><Leave /></Suspense></PermissionGuard>} />
+          <Route path="payroll" element={<PermissionGuard moduleCode="MOD_AUTH" permissions={['USER_VIEW']}><Suspense fallback={<TableSkeleton />}><Payroll /></Suspense></PermissionGuard>} />
+          <Route path="roles" element={<PermissionGuard moduleCode="MOD_AUTH" permissions={['ROLE_MANAGE']}><Suspense fallback={<TableSkeleton />}><Roles /></Suspense></PermissionGuard>} />
+          <Route path="documents" element={<PermissionGuard moduleCode="MOD_AUTH" permissions={['USER_VIEW']}><Suspense fallback={<TableSkeleton />}><Documents /></Suspense></PermissionGuard>} />
         </Route>
 
         {/* Admin Routes */}
-        <Route path="/admin/tenants" element={<Suspense fallback={<TableSkeleton />}><Tenants /></Suspense>} />
-        <Route path="/admin/industries" element={<Suspense fallback={<TableSkeleton />}><Industries /></Suspense>} />
+        <Route path="/admin/tenants" element={<PermissionGuard permissions={['TENANT_MANAGE']}><Suspense fallback={<TableSkeleton />}><Tenants /></Suspense></PermissionGuard>} />
+        <Route path="/admin/industries" element={<PermissionGuard permissions={['INDUSTRY_MANAGE']}><Suspense fallback={<TableSkeleton />}><Industries /></Suspense></PermissionGuard>} />
 
         <Route 
           path="/settings" 

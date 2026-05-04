@@ -9,17 +9,18 @@ import { Checkbox } from '@/shared/ui/checkbox';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { login, clearError } from '@/core/auth/slice/authSlice';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Loader2, Mail, Lock, ArrowRight } from 'lucide-react';
+import { AlertCircle, Loader2, Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/shared/lib/utils';
 
 const LoginForm: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { loading, error } = useAppSelector((state) => state.auth);
+  const { isSubmitting, error } = useAppSelector((state) => state.auth);
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
 
   React.useEffect(() => {
@@ -79,7 +80,7 @@ const LoginForm: React.FC = () => {
       <CardContent className="pt-8">
         <form className="space-y-6" onSubmit={handleSubmit} noValidate>
           <div className="space-y-2">
-            <Label htmlFor="email" className={cn(fieldErrors.email && "text-destructive", loading && "opacity-50")}>Email address</Label>
+            <Label htmlFor="email" className={cn(fieldErrors.email && "text-destructive", isSubmitting && "opacity-50")}>Email address</Label>
             <div className="relative rounded-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Mail className={cn("h-5 w-5", fieldErrors.email ? "text-destructive" : "text-muted-foreground")} />
@@ -90,7 +91,7 @@ const LoginForm: React.FC = () => {
                 value={email}
                 onChange={handleEmailChange}
                 error={!!fieldErrors.email}
-                disabled={loading}
+                disabled={isSubmitting}
                 className="pl-10 h-12 bg-background border-border"
                 placeholder="admin@company.com"
               />
@@ -104,21 +105,32 @@ const LoginForm: React.FC = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password" className={cn(fieldErrors.password && "text-destructive", loading && "opacity-50")}>Password</Label>
+            <Label htmlFor="password" className={cn(fieldErrors.password && "text-destructive", isSubmitting && "opacity-50")}>Password</Label>
             <div className="relative rounded-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className={cn("h-5 w-5", fieldErrors.password ? "text-destructive" : "text-muted-foreground")} />
               </div>
               <Input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={handlePasswordChange}
                 error={!!fieldErrors.password}
-                disabled={loading}
-                className="pl-10 h-12 bg-background border-border"
+                disabled={isSubmitting}
+                className="pl-10 pr-10 h-12 bg-background border-border"
                 placeholder="••••••••"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
             </div>
             {fieldErrors.password && (
               <p className="text-xs font-medium text-destructive mt-1 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
@@ -130,21 +142,21 @@ const LoginForm: React.FC = () => {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Checkbox id="remember-me" disabled={loading} />
-              <Label htmlFor="remember-me" className={cn("text-sm text-muted-foreground cursor-pointer font-normal", loading && "opacity-50 cursor-not-allowed")}>
+              <Checkbox id="remember-me" disabled={isSubmitting} />
+              <Label htmlFor="remember-me" className={cn("text-sm text-muted-foreground cursor-pointer font-normal", isSubmitting && "opacity-50 cursor-not-allowed")}>
                 Remember me
               </Label>
             </div>
 
             <div className="text-sm">
-              <Link to="/forgot-password" title="Forgot Password" className={cn("font-medium text-primary hover:text-primary/80 transition-colors", loading && "pointer-events-none opacity-50")}>
+              <Link to="/forgot-password" title="Forgot Password" className={cn("font-medium text-primary hover:text-primary/80 transition-colors", isSubmitting && "pointer-events-none opacity-50")}>
                 Forgot your password?
               </Link>
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-12 text-md font-semibold" disabled={loading}>
-            {loading ? (
+          <Button type="submit" className="w-full h-12 text-md font-semibold" disabled={isSubmitting}>
+            {isSubmitting ? (
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span>Signing in...</span>

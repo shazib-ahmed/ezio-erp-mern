@@ -15,6 +15,10 @@ const Login: React.FC = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  if (isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-foreground font-jakarta">
       <ThemeSwitcher />

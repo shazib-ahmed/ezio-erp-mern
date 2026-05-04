@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, Mail, User, ArrowRight, AlertCircle, Phone, Lock } from 'lucide-react';
+import { Building2, Mail, User, ArrowRight, AlertCircle, Phone, Lock, Hash, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
+import { Checkbox } from '@/shared/ui/checkbox';
 import { cn } from '@/shared/lib/utils';
+import axios from '@/shared/lib/axios';
 
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { signup, clearError } from '@/core/auth/slice/authSlice';
@@ -14,10 +16,18 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
+interface Industry {
+  id: number;
+  name: string;
+}
+
 const SignupForm: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { loading, error } = useAppSelector((state) => state.auth);
+  const { isSubmitting, error } = useAppSelector((state) => state.auth);
+
+  const [industries, setIndustries] = useState<Industry[]>([]);
+  const [loadingIndustries, setLoadingIndustries] = useState(true);
 
   const [formData, setFormData] = useState({
     businessName: '',
@@ -25,23 +35,50 @@ const SignupForm: React.FC = () => {
     industryId: '',
     adminName: '',
     adminEmail: '',
+    username: '',
     phone: '',
+    businessPhone: '',
     password: '',
+    confirmPassword: '',
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [sameAsPersonal, setSameAsPersonal] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  React.useEffect(() => {
+  // Load industries from API
+  useEffect(() => {
+    const fetchIndustries = async () => {
+      try {
+        const response = await axios.get('/industries');
+        // The backend uses a TransformInterceptor that wraps data in { success: true, data: [...] }
+        setIndustries(response.data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch industries', err);
+        toast.error('Could not load industries');
+      } finally {
+        setLoadingIndustries(false);
+      }
+    };
+    fetchIndustries();
+  }, []);
+
+  useEffect(() => {
     return () => {
       dispatch(clearError());
     };
   }, [dispatch]);
 
-  // Map backend error to specific field and show toast
-  React.useEffect(() => {
+  useEffect(() => {
     if (error) {
       if (error.includes('Admin email already exists')) {
         setFieldErrors(prev => ({ ...prev, adminEmail: 'This email is already registered' }));
+      } else if (error.includes('username already exists')) {
+        setFieldErrors(prev => ({ ...prev, username: 'This username is taken' }));
+      } else if (error.includes('Business name already exists')) {
+        setFieldErrors(prev => ({ ...prev, businessName: 'This business name is already registered' }));
       } else {
         toast.error(error);
       }
@@ -50,7 +87,18 @@ const SignupForm: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    
+    setFormData(prev => {
+      const newData = { ...prev, [name]: value };
+      
+      // If sameAsPersonal is true and personal phone is changing, sync business phone
+      if (sameAsPersonal && name === 'phone') {
+        newData.businessPhone = value;
+      }
+      
+      return newData;
+    });
+
     if (fieldErrors[name]) {
       setFieldErrors(prev => {
         const next = { ...prev };
@@ -59,6 +107,13 @@ const SignupForm: React.FC = () => {
       });
     }
     if (error) dispatch(clearError());
+  };
+
+  const handleCheckboxChange = (checked: boolean) => {
+    setSameAsPersonal(checked);
+    if (checked) {
+      setFormData(prev => ({ ...prev, businessPhone: prev.phone }));
+    }
   };
 
   const handleSelectChange = (value: string) => {
@@ -80,13 +135,20 @@ const SignupForm: React.FC = () => {
     if (!formData.companyEmail) errors.companyEmail = 'Company email is required';
     else if (!/\S+@\S+\.\S+/.test(formData.companyEmail)) errors.companyEmail = 'Invalid email format';
     
-    if (!formData.adminName) errors.adminName = 'Admin name is required';
-    if (!formData.adminEmail) errors.adminEmail = 'Admin email is required';
+    if (!formData.adminName) errors.adminName = 'Full name is required';
+    if (!formData.username) errors.username = 'Username is required';
+    if (!formData.adminEmail) errors.adminEmail = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(formData.adminEmail)) errors.adminEmail = 'Invalid email format';
     
     if (!formData.phone) errors.phone = 'Phone number is required';
+    if (!formData.businessPhone) errors.businessPhone = 'Business phone is required';
+    
     if (!formData.password) errors.password = 'Password is required';
-    else if (formData.password.length < 6) errors.password = 'Password must be at least 6 characters';
+    else if (formData.password.length < 6) errors.password = 'Min 6 characters';
+    
+    if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -96,6 +158,8 @@ const SignupForm: React.FC = () => {
     e.preventDefault();
     if (!validate()) return;
     
+    // We send adminEmail as companyEmail for simplicity in this DTO if needed
+    // or keep them separate. Our backend RegisterDto has adminEmail and companyEmail.
     const resultAction = await dispatch(signup(formData));
     if (signup.fulfilled.match(resultAction)) {
       toast.success('Workspace created successfully!');
@@ -104,63 +168,62 @@ const SignupForm: React.FC = () => {
   };
 
   return (
-    <Card className="border-border/40">
-      <CardContent className="pt-8">
-        <form className="space-y-6" onSubmit={handleSubmit} noValidate>
+    <Card className="border-border/40 shadow-xl bg-card/50 backdrop-blur-sm">
+      <CardContent className="pt-8 px-6 pb-8">
+        <form className="space-y-8" onSubmit={handleSubmit} noValidate>
           
-          <div className="border-b border-border/50 pb-6">
-            <h3 className={cn("text-lg font-semibold mb-4 flex items-center gap-2", loading && "opacity-50")}>
-              <Building2 className="h-5 w-5 text-primary" />
-              Business Information
-            </h3>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          {/* Section 1: Business Details */}
+          <div className="space-y-5">
+            <div className="flex items-center gap-3 border-b border-border/50 pb-3">
+              <div className="bg-primary/10 p-2 rounded-lg">
+                <Building2 className="h-5 w-5 text-primary" />
+              </div>
+              <h3 className="text-lg font-bold tracking-tight">Business Profile</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="businessName" className={cn(fieldErrors.businessName && "text-destructive", loading && "opacity-50")}>Business Name</Label>
+                <Label htmlFor="businessName" className={cn(fieldErrors.businessName && "text-destructive")}>Business Name</Label>
                 <Input
                   id="businessName"
                   name="businessName"
                   value={formData.businessName}
                   onChange={handleChange}
                   error={!!fieldErrors.businessName}
-                  disabled={loading}
-                  placeholder="Acme Corp"
-                  className="h-11 bg-background border-border"
+                  disabled={isSubmitting}
+                  placeholder="Acme Solutions"
+                  className="h-11 bg-background"
                 />
                 {fieldErrors.businessName && (
-                  <p className="text-[11px] font-medium text-destructive mt-1 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {fieldErrors.businessName}
+                  <p className="text-[11px] font-medium text-destructive mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {fieldErrors.businessName}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="industry" className={cn(fieldErrors.industryId && "text-destructive", loading && "opacity-50")}>Industry</Label>
-                <Select onValueChange={handleSelectChange} value={formData.industryId} disabled={loading}>
-                  <SelectTrigger className={cn("h-11 bg-background border-border", fieldErrors.industryId && "border-destructive text-destructive")}>
-                    <SelectValue placeholder="Select Industry" />
+                <Label htmlFor="industry" className={cn(fieldErrors.industryId && "text-destructive")}>Select Industry</Label>
+                <Select onValueChange={handleSelectChange} value={formData.industryId} disabled={isSubmitting || loadingIndustries}>
+                  <SelectTrigger className={cn("h-11 bg-background", fieldErrors.industryId && "border-destructive")}>
+                    <SelectValue placeholder={loadingIndustries ? "Loading..." : "Select Industry"} />
                   </SelectTrigger>
-                  <SelectContent className="border-border">
-                    <SelectItem value="Garments">Garments</SelectItem>
-                    <SelectItem value="Pharmacy">Pharmacy</SelectItem>
-                    <SelectItem value="Retail">Retail</SelectItem>
-                    <SelectItem value="Manufacturing">Manufacturing</SelectItem>
-                    <SelectItem value="Technology">Technology</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                  <SelectContent className="border-border max-h-[300px] overflow-y-auto">
+                    {industries.map((ind) => (
+                      <SelectItem key={ind.id} value={ind.id.toString()}>{ind.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {fieldErrors.industryId && (
-                  <p className="text-[11px] font-medium text-destructive mt-1 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {fieldErrors.industryId}
+                  <p className="text-[11px] font-medium text-destructive mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {fieldErrors.industryId}
                   </p>
                 )}
               </div>
 
-              <div className="col-span-2 space-y-2">
-                <Label htmlFor="companyEmail" className={cn(fieldErrors.companyEmail && "text-destructive", loading && "opacity-50")}>Company Email</Label>
+              <div className="space-y-2">
+                <Label htmlFor="companyEmail" className={cn(fieldErrors.companyEmail && "text-destructive")}>Company Email</Label>
                 <div className="relative">
-                  <Mail className={cn("absolute left-3 top-3 h-5 w-5", fieldErrors.companyEmail ? "text-destructive" : "text-muted-foreground")} />
+                  <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="companyEmail"
                     name="companyEmail"
@@ -168,49 +231,91 @@ const SignupForm: React.FC = () => {
                     value={formData.companyEmail}
                     onChange={handleChange}
                     error={!!fieldErrors.companyEmail}
-                    disabled={loading}
-                    className="pl-10 h-11 bg-background border-border"
-                    placeholder="contact@company.com"
+                    disabled={isSubmitting}
+                    className="pl-10 h-11 bg-background"
+                    placeholder="hello@company.com"
                   />
                 </div>
-                {fieldErrors.companyEmail && (
-                  <p className="text-[11px] font-medium text-destructive mt-1 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {fieldErrors.companyEmail}
-                  </p>
-                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="businessPhone" className={cn(fieldErrors.businessPhone && "text-destructive")}>Business Phone</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="businessPhone"
+                    name="businessPhone"
+                    type="tel"
+                    value={formData.businessPhone}
+                    onChange={handleChange}
+                    error={!!fieldErrors.businessPhone}
+                    disabled={isSubmitting || sameAsPersonal}
+                    className="pl-10 h-11 bg-background"
+                    placeholder="Business Contact"
+                  />
+                </div>
+                <div className="flex items-center space-x-2 mt-2">
+                  <Checkbox 
+                    id="sameAsPersonal" 
+                    checked={sameAsPersonal} 
+                    onCheckedChange={(checked) => handleCheckboxChange(checked as boolean)}
+                  />
+                  <label htmlFor="sameAsPersonal" className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Same as personal phone
+                  </label>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="pt-2">
-            <h3 className={cn("text-lg font-semibold mb-4 flex items-center gap-2", loading && "opacity-50")}>
-              <User className="h-5 w-5 text-primary" />
-              Admin Account
-            </h3>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div className="col-span-2 space-y-2">
-                <Label htmlFor="adminName" className={cn(fieldErrors.adminName && "text-destructive", loading && "opacity-50")}>Full Name</Label>
+          {/* Section 2: Personal Details */}
+          <div className="space-y-5">
+            <div className="flex items-center gap-3 border-b border-border/50 pb-3">
+              <div className="bg-primary/10 p-2 rounded-lg">
+                <User className="h-5 w-5 text-primary" />
+              </div>
+              <h3 className="text-lg font-bold tracking-tight">Owner Details</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="adminName" className={cn(fieldErrors.adminName && "text-destructive")}>Owner Full Name</Label>
                 <Input
                   id="adminName"
                   name="adminName"
                   value={formData.adminName}
                   onChange={handleChange}
                   error={!!fieldErrors.adminName}
-                  disabled={loading}
-                  className="h-11 bg-background border-border"
+                  disabled={isSubmitting}
+                  className="h-11 bg-background"
                   placeholder="John Doe"
                 />
-                {fieldErrors.adminName && (
-                  <p className="text-[11px] font-medium text-destructive mt-1 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {fieldErrors.adminName}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="username" className={cn(fieldErrors.username && "text-destructive")}>Username</Label>
+                <div className="relative">
+                  <Hash className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="username"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    error={!!fieldErrors.username}
+                    disabled={isSubmitting}
+                    className="pl-10 h-11 bg-background"
+                    placeholder="johndoe123"
+                  />
+                </div>
+                {fieldErrors.username && (
+                  <p className="text-[11px] font-medium text-destructive mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {fieldErrors.username}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="adminEmail" className={cn(fieldErrors.adminEmail && "text-destructive", loading && "opacity-50")}>Admin Email</Label>
+                <Label htmlFor="adminEmail" className={cn(fieldErrors.adminEmail && "text-destructive")}>Personal Email</Label>
                 <Input
                   id="adminEmail"
                   name="adminEmail"
@@ -218,88 +323,112 @@ const SignupForm: React.FC = () => {
                   value={formData.adminEmail}
                   onChange={handleChange}
                   error={!!fieldErrors.adminEmail}
-                  disabled={loading}
-                  className="h-11 bg-background border-border"
-                  placeholder="admin@company.com"
+                  disabled={isSubmitting}
+                  className="h-11 bg-background"
+                  placeholder="john@example.com"
                 />
-                {fieldErrors.adminEmail && (
-                  <p className="text-[11px] font-medium text-destructive mt-1 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {fieldErrors.adminEmail}
-                  </p>
-                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone" className={cn(fieldErrors.phone && "text-destructive", loading && "opacity-50")}>Phone Number</Label>
-                <div className="relative">
-                  <Phone className={cn("absolute left-3 top-3 h-5 w-5", fieldErrors.phone ? "text-destructive" : "text-muted-foreground")} />
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    error={!!fieldErrors.phone}
-                    disabled={loading}
-                    className="pl-10 h-11 bg-background border-border"
-                    placeholder="+880 1XXX XXXXXX"
-                  />
-                </div>
-                {fieldErrors.phone && (
-                  <p className="text-[11px] font-medium text-destructive mt-1 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {fieldErrors.phone}
-                  </p>
-                )}
+                <Label htmlFor="phone" className={cn(fieldErrors.phone && "text-destructive")}>Personal Phone</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  error={!!fieldErrors.phone}
+                  disabled={isSubmitting}
+                  className="h-11 bg-background"
+                  placeholder="+880 1XXX XXXXXX"
+                />
               </div>
 
-              <div className="col-span-2 space-y-2">
-                <Label htmlFor="password" className={cn(fieldErrors.password && "text-destructive", loading && "opacity-50")}>Password</Label>
+              <div className="space-y-2">
+                <Label htmlFor="password" className={cn(fieldErrors.password && "text-destructive")}>Password</Label>
                 <div className="relative">
-                  <Lock className={cn("absolute left-3 top-3 h-5 w-5", fieldErrors.password ? "text-destructive" : "text-muted-foreground")} />
+                  <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="password"
                     name="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={handleChange}
                     error={!!fieldErrors.password}
-                    disabled={loading}
-                    className="pl-10 h-11 bg-background border-border"
+                    disabled={isSubmitting}
+                    className="pl-10 pr-10 h-11 bg-background"
                     placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
-                {fieldErrors.password && (
-                  <p className="text-[11px] font-medium text-destructive mt-1 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {fieldErrors.password}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className={cn(fieldErrors.confirmPassword && "text-destructive")}>Confirm Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    error={!!fieldErrors.confirmPassword}
+                    disabled={isSubmitting}
+                    className="pl-10 pr-10 h-11 bg-background"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                {fieldErrors.confirmPassword && (
+                  <p className="text-[11px] font-medium text-destructive mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {fieldErrors.confirmPassword}
                   </p>
                 )}
               </div>
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-12 text-md font-semibold mt-4" disabled={loading}>
-            {loading ? (
+          <Button type="submit" className="w-full h-12 text-md font-bold mt-4 shadow-lg shadow-primary/20" disabled={isSubmitting}>
+            {isSubmitting ? (
               <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Creating workspace...</span>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Creating Workspace...</span>
               </div>
             ) : (
               <>
-                Create Workspace
-                <ArrowRight className="ml-2 h-4 w-4" />
+                Initialize Ezio-ERP
+                <ArrowRight className="ml-2 h-5 w-5" />
               </>
             )}
           </Button>
         </form>
 
-        <div className="mt-6 pt-6 border-t border-border/50">
-          <p className="text-center text-sm text-muted-foreground">
+        <div className="mt-8 pt-6 border-t border-border/50 text-center">
+          <p className="text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link to="/login" className="font-semibold text-primary hover:text-primary/80 transition-colors">
-              Sign in
+            <Link to="/login" className="font-bold text-primary hover:underline underline-offset-4 decoration-2">
+              Sign in here
             </Link>
           </p>
         </div>

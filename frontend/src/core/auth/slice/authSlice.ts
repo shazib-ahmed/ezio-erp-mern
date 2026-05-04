@@ -1,15 +1,37 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from '@/shared/lib/axios';
 import { AuthState } from '../types/auth.types';
+import { saveSecureData, getSecureData, removeSecureData } from '@/shared/lib/storage';
 
 const initialState: AuthState = {
-  user: JSON.parse(localStorage.getItem('user') || 'null'),
-  accessToken: localStorage.getItem('accessToken'),
-  refreshToken: localStorage.getItem('refreshToken'),
-  isAuthenticated: !!localStorage.getItem('accessToken'),
-  loading: false,
+  user: null,
+  accessToken: null,
+  refreshToken: null,
+  isAuthenticated: false,
+  loading: true,
+  isInitializing: true,
+  isSubmitting: false,
   error: null,
 };
+
+// Initialize auth from secure storage
+export const initializeAuth = createAsyncThunk(
+  'auth/initialize',
+  async (_, { rejectWithValue }) => {
+    try {
+      const user = await getSecureData('auth_user');
+      const accessToken = await getSecureData('auth_accessToken');
+      const refreshToken = await getSecureData('auth_refreshToken');
+
+      if (accessToken && user) {
+        return { user, accessToken, refreshToken };
+      }
+      return null;
+    } catch (error) {
+      return rejectWithValue('Initialization failed');
+    }
+  }
+);
 
 export const login = createAsyncThunk(
   'auth/login',
@@ -18,9 +40,10 @@ export const login = createAsyncThunk(
       const response = await axios.post('/auth/login', credentials);
       const { user, accessToken, refreshToken } = response.data.data;
       
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      localStorage.setItem('user', JSON.stringify(user));
+      // Save to Encrypted IndexedDB
+      await saveSecureData('auth_user', user);
+      await saveSecureData('auth_accessToken', accessToken);
+      await saveSecureData('auth_refreshToken', refreshToken);
       
       return { user, accessToken, refreshToken };
     } catch (error: any) {
@@ -36,9 +59,10 @@ export const signup = createAsyncThunk(
       const response = await axios.post('/auth/signup', data);
       const { user, accessToken, refreshToken } = response.data.data;
       
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      localStorage.setItem('user', JSON.stringify(user));
+      // Save to Encrypted IndexedDB
+      await saveSecureData('auth_user', user);
+      await saveSecureData('auth_accessToken', accessToken);
+      await saveSecureData('auth_refreshToken', refreshToken);
       
       return { user, accessToken, refreshToken };
     } catch (error: any) {
@@ -59,12 +83,27 @@ export const refresh = createAsyncThunk(
       
       const { accessToken, refreshToken } = response.data.data;
       
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
+      await saveSecureData('auth_accessToken', accessToken);
+      await saveSecureData('auth_refreshToken', refreshToken);
       
       return { accessToken, refreshToken };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Refresh failed');
+    }
+  }
+);
+
+export const logoutUser = createAsyncThunk(
+  'auth/logout',
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      await axios.post('/auth/logout');
+      dispatch(logout()); // Clear local state
+      return null;
+    } catch (error: any) {
+      // Even if API fails, we should clear local state for safety
+      dispatch(logout());
+      return rejectWithValue(error.response?.data?.message || 'Logout failed');
     }
   }
 );
@@ -78,9 +117,12 @@ const authSlice = createSlice({
       state.accessToken = null;
       state.refreshToken = null;
       state.isAuthenticated = false;
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
+      state.loading = false;
+      state.isInitializing = false;
+      state.isSubmitting = false;
+      removeSecureData('auth_user');
+      removeSecureData('auth_accessToken');
+      removeSecureData('auth_refreshToken');
     },
     clearError: (state) => {
       state.error = null;
@@ -88,11 +130,26 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(initializeAuth.fulfilled, (state, action) => {
+        state.loading = false;
+        state.isInitializing = false;
+        if (action.payload) {
+          state.user = action.payload.user;
+          state.accessToken = action.payload.accessToken;
+          state.refreshToken = action.payload.refreshToken;
+          state.isAuthenticated = true;
+        }
+      })
+      .addCase(initializeAuth.rejected, (state) => {
+        state.loading = false;
+        state.isInitializing = false;
+      })
       .addCase(login.pending, (state) => {
-        state.loading = true;
+        state.isSubmitting = true;
         state.error = null;
       })
       .addCase(login.fulfilled, (state, action) => {
+        state.isSubmitting = false;
         state.loading = false;
         state.user = action.payload.user;
         state.accessToken = action.payload.accessToken;
@@ -100,14 +157,15 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
       })
       .addCase(login.rejected, (state, action) => {
-        state.loading = false;
+        state.isSubmitting = false;
         state.error = action.payload as string;
       })
       .addCase(signup.pending, (state) => {
-        state.loading = true;
+        state.isSubmitting = true;
         state.error = null;
       })
       .addCase(signup.fulfilled, (state, action) => {
+        state.isSubmitting = false;
         state.loading = false;
         state.user = action.payload.user;
         state.accessToken = action.payload.accessToken;
@@ -115,8 +173,17 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
       })
       .addCase(signup.rejected, (state, action) => {
-        state.loading = false;
+        state.isSubmitting = false;
         state.error = action.payload as string;
+      })
+      .addCase(logoutUser.pending, (state) => {
+        state.isSubmitting = true;
+      })
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.isSubmitting = false;
+      })
+      .addCase(logoutUser.rejected, (state) => {
+        state.isSubmitting = false;
       })
       .addCase(refresh.fulfilled, (state, action) => {
         state.accessToken = action.payload.accessToken;
@@ -127,9 +194,9 @@ const authSlice = createSlice({
         state.accessToken = null;
         state.refreshToken = null;
         state.isAuthenticated = false;
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+        removeSecureData('auth_user');
+        removeSecureData('auth_accessToken');
+        removeSecureData('auth_refreshToken');
       });
   },
 });

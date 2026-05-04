@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   LayoutDashboard, 
   Package, 
@@ -14,12 +14,19 @@ import {
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { Link, useLocation } from 'react-router-dom';
+import { useAppSelector } from '@/app/hooks';
 
 interface NavItem {
   icon: any;
   label: string;
   path: string;
-  subItems?: { label: string; path: string }[];
+  moduleCode?: string; // Match with backend MOD_XXX
+  permissions?: string[]; // Required permissions to see this item
+  subItems?: { 
+    label: string; 
+    path: string;
+    permissions?: string[];
+  }[];
 }
 
 const navItems: NavItem[] = [
@@ -27,55 +34,62 @@ const navItems: NavItem[] = [
   { 
     icon: Package, 
     label: 'Inventory', 
-    path: '/inventory' 
+    path: '/inventory',
+    moduleCode: 'MOD_INVENTORY',
+    permissions: ['PRODUCT_VIEW'],
+    subItems: [
+      { label: 'Products', path: '/inventory/products', permissions: ['PRODUCT_VIEW'] },
+      { label: 'Stock Management', path: '/inventory/stock', permissions: ['STOCK_ADJUST'] },
+    ]
   },
   { 
     icon: Wallet, 
     label: 'Finance', 
     path: '/finance',
+    moduleCode: 'MOD_FINANCE',
+    permissions: ['TRX_VIEW'],
     subItems: [
-      { label: 'General Ledger', path: '/finance/ledger' },
-      { label: 'Bank & Accounts', path: '/finance/accounts' },
-      { label: 'Payable/Receivable', path: '/finance/payable-receivable' },
-      { label: 'Asset Management', path: '/finance/assets' },
-      { label: 'Tax & VAT', path: '/finance/tax' },
-      { label: 'Financial Reports', path: '/finance/reports' },
+      { label: 'Transactions', path: '/finance/transactions', permissions: ['TRX_VIEW'] },
+      { label: 'Expenses', path: '/finance/expenses', permissions: ['EXPENSE_VIEW'] },
+      { label: 'Bank & Accounts', path: '/finance/accounts', permissions: ['ACCOUNT_VIEW'] },
     ]
   },
   { 
     icon: ShoppingCart, 
     label: 'Sales', 
     path: '/sales',
+    moduleCode: 'MOD_SALES',
+    permissions: ['SALE_VIEW'],
     subItems: [
-      { label: 'Quotations', path: '/sales/quotations' },
-      { label: 'Sales Orders', path: '/sales/orders' },
-      { label: 'POS Terminal', path: '/sales/pos' },
-      { label: 'Customer Credit', path: '/sales/customers' },
-      { label: 'Returns & Refunds', path: '/sales/returns' },
+      { label: 'POS Terminal', path: '/sales/pos', permissions: ['SALE_CREATE'] },
+      { label: 'Sales History', path: '/sales/history', permissions: ['SALE_VIEW'] },
+      { label: 'Customers', path: '/sales/customers', permissions: ['CUSTOMER_VIEW'] },
     ]
   },
   { 
     icon: Users, 
     label: 'HRM', 
     path: '/hrm',
+    moduleCode: 'MOD_AUTH',
+    permissions: ['USER_VIEW'],
     subItems: [
-      { label: 'Employees', path: '/hrm/employees' },
-      { label: 'Attendance', path: '/hrm/attendance' },
-      { label: 'Leave Management', path: '/hrm/leave' },
-      { label: 'Payroll', path: '/hrm/payroll' },
-      { label: 'Roles & Permissions', path: '/hrm/roles' },
-      { label: 'Document Vault', path: '/hrm/documents' },
+      { label: 'Employees', path: '/hrm/employees', permissions: ['USER_VIEW'] },
+      { label: 'Roles & Permissions', path: '/hrm/roles', permissions: ['ROLE_MANAGE'] },
     ]
   },
   { 
     icon: Building2, 
     label: 'Tenants', 
-    path: '/admin/tenants' 
+    path: '/admin/tenants',
+    moduleCode: 'MOD_SYSTEM',
+    permissions: ['TENANT_MANAGE'] // Custom permission for super admins
   },
   { 
     icon: Tag, 
     label: 'Industries', 
-    path: '/admin/industries' 
+    path: '/admin/industries',
+    moduleCode: 'MOD_SYSTEM',
+    permissions: ['INDUSTRY_MANAGE']
   },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
@@ -88,16 +102,56 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  const { user } = useAppSelector((state) => state.auth);
+
+  // Filter nav items based on user's active modules and permissions
+  const filteredNavItems = useMemo(() => {
+    if (!user) return [];
+
+    const userPermissions = user.permissions || [];
+    const activeModuleCodes = user.activeModules?.map((m: any) => m.code) || [];
+    const isSuperAdmin = user.roles?.some((r: any) => r.role.name === 'SUPER_ADMIN');
+
+    return navItems.filter(item => {
+      // 1. Module Check (if item belongs to a specific module)
+      if (item.moduleCode && !isSuperAdmin) {
+        if (!activeModuleCodes.includes(item.moduleCode)) return false;
+      }
+
+      // 2. Permission Check
+      if (item.permissions && item.permissions.length > 0) {
+        const hasPermission = item.permissions.some(p => userPermissions.includes(p));
+        if (!hasPermission && !isSuperAdmin) return false;
+      }
+
+      return true;
+    }).map(item => {
+      // 3. Sub-items Permission Check
+      if (item.subItems) {
+        return {
+          ...item,
+          subItems: item.subItems.filter(sub => {
+            if (sub.permissions && sub.permissions.length > 0) {
+              const hasPermission = sub.permissions.some(p => userPermissions.includes(p));
+              if (!hasPermission && !isSuperAdmin) return false;
+            }
+            return true;
+          })
+        };
+      }
+      return item;
+    });
+  }, [user]);
 
   React.useEffect(() => {
-    const currentParent = navItems.find(item => 
+    const currentParent = filteredNavItems.find(item => 
       item.subItems && location.pathname.startsWith(item.path)
     )?.label;
     
     if (currentParent) {
       setExpandedItem(currentParent);
     }
-  }, [location.pathname]);
+  }, [location.pathname, filteredNavItems]);
 
   const toggleExpand = (label: string) => {
     setExpandedItem(expandedItem === label ? null : label);
@@ -125,7 +179,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
                 <span className="font-black text-white text-xl italic">E</span>
               </div>
-              <span className="text-lg font-bold text-white leading-none tracking-tight">Ezio-ERP</span>
+              <div className="flex flex-col">
+                <span className="text-lg font-bold text-white leading-tight tracking-tight">Ezio-ERP</span>
+                {user?.tenants?.[0]?.tenant && (
+                  <span className="text-[10px] text-gray-500 font-medium truncate max-w-[120px]">
+                    {user.tenants[0].tenant.name}
+                  </span>
+                )}
+              </div>
             </div>
             <Button variant="ghost" size="icon" className="lg:hidden text-gray-400 hover:text-white hover:bg-white/5" onClick={onClose}>
               <ChevronLeft className="h-5 w-5" />
@@ -133,13 +194,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
 
           <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
-            {navItems.map((item) => {
+            {filteredNavItems.map((item) => {
               const isParentActive = location.pathname.startsWith(item.path);
               const isExpanded = expandedItem === item.label;
 
               return (
                 <div key={item.label} className="space-y-1">
-                  {item.subItems ? (
+                  {item.subItems && item.subItems.length > 0 ? (
                     <>
                       <button
                         onClick={() => toggleExpand(item.label)}
