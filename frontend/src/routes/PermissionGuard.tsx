@@ -25,14 +25,30 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({
   const activeModuleCodes = user.activeModules?.map((m: any) => m.code) || [];
   const isSuperAdmin = user.roles?.some((r: any) => r.role.name === 'SUPER_ADMIN');
 
-  // 1. Module Check
+  // 1. Role-based Path Protection
+  const isAdminPath = location.pathname.startsWith('/admin');
+  
+  if (isSuperAdmin) {
+    // Super Admin should NOT access business modules
+    // Business routes in AppRoutes all have a moduleCode (Inventory, Sales, etc.)
+    if (moduleCode && moduleCode !== 'MOD_SYSTEM') {
+      return <Navigate to="/dashboard" replace />;
+    }
+  } else {
+    // Regular Tenants/Users should NOT access admin paths
+    if (isAdminPath) {
+      return <Navigate to="/dashboard" replace />;
+    }
+  }
+
+  // 2. Module Check (for Tenants)
   if (moduleCode && !isSuperAdmin) {
     if (!activeModuleCodes.includes(moduleCode)) {
       return <Navigate to="/dashboard" replace />;
     }
   }
 
-  // 2. Permission Check
+  // 3. Permission Check
   if (permissions.length > 0 && !isSuperAdmin) {
     const hasPermission = permissions.some(p => userPermissions.includes(p));
     if (!hasPermission) {

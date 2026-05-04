@@ -4,13 +4,14 @@ import { AppService } from './app.service';
 
 import { PrismaModule } from './shared/prisma/prisma.module';
 import { IndustryModule } from './core/industry/industry.module';
+import { TenantsModule } from './core/tenants/tenants.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './core/auth/auth.module';
 import { JwtAuthGuard } from './core/auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '@/common/guards/permissions.guard';
 
 @Module({
-  imports: [PrismaModule, IndustryModule, AuthModule],
+  imports: [PrismaModule, IndustryModule, AuthModule, TenantsModule],
   controllers: [AppController],
   providers: [
     AppService,

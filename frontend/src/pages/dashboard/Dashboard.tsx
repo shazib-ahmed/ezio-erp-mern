@@ -12,7 +12,6 @@ import {
   ArrowUpRight, 
   Clock,
   Package,
-  Users,
   Wallet,
   Building2,
   Tag
