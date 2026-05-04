@@ -6,6 +6,8 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { initializeAuth } from '@/core/auth/slice/authSlice';
 import { Loader2 } from 'lucide-react';
 
+import PageTitleUpdater from '@/shared/components/common/PageTitleUpdater';
+
 function App() {
   const dispatch = useAppDispatch();
   const { isInitializing } = useAppSelector((state) => state.auth);
@@ -24,6 +26,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <PageTitleUpdater />
       <Toaster position="top-center" richColors />
       <AppRoutes />
     </BrowserRouter>

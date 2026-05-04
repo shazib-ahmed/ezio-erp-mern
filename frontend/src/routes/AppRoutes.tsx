@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { DashboardSkeleton } from '@/shared/components/skeletons/DashboardSkeleton';
 import { TableSkeleton } from '@/shared/components/skeletons/TableSkeleton';
@@ -33,6 +33,8 @@ const Tenants = lazy(() => import('@/pages/admin/Tenants'));
 const Industries = lazy(() => import('@/pages/admin/Industries'));
 const LoginPage = lazy(() => import('@/pages/auth/Login'));
 const SignupPage = lazy(() => import('@/pages/auth/Signup'));
+
+
 
 const AppRoutes: React.FC = () => {
   return (
