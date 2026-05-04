@@ -1,15 +1,17 @@
 import React from 'react';
-import { MainLayout } from '@/shared/components/layout/MainLayout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/ui/tabs';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Button } from '@/shared/ui/button';
+import { useAppSelector } from '@/app/hooks';
 import { User, Lock, Save, Camera } from 'lucide-react';
 
 const Settings: React.FC = () => {
+  const { user } = useAppSelector((state) => state.auth);
+
   return (
-    <MainLayout>
+    <>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground">System Settings</h1>
         <p className="text-muted-foreground">Manage your personal profile and security credentials.</p>
@@ -35,7 +37,11 @@ const Settings: React.FC = () => {
               <div className="flex flex-col md:flex-row items-start gap-8">
                 <div className="relative group">
                   <div className="w-32 h-32 rounded-2xl bg-muted border border-border overflow-hidden flex items-center justify-center">
-                    <User className="h-12 w-12 text-muted-foreground" />
+                    {user?.avatar ? (
+                      <img src={user.avatar} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="h-12 w-12 text-muted-foreground" />
+                    )}
                   </div>
                   <button className="absolute -bottom-2 -right-2 p-2 rounded-xl bg-primary text-primary-foreground shadow-none border border-primary/20 hover:scale-105 transition-transform">
                     <Camera className="h-4 w-4" />
@@ -102,7 +108,7 @@ const Settings: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </MainLayout>
+    </>
   );
 };
 

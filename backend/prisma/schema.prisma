@@ -41,6 +41,7 @@ model Tenant {
   accounts      Account[]
   activeModules Module[]  @relation("TenantModules")
   
+  logo          String?   // Company Logo URL/Path
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -70,6 +71,7 @@ model User {
   
   refreshToken String? @db.Text
   
+  avatar    String?  // User Profile Image
   createdAt DateTime @default(now())
 
   @@index([email])

@@ -1,5 +1,4 @@
 import React from 'react';
-import { MainLayout } from '@/shared/components/layout/MainLayout';
 import { ProductList } from '@/modules/inventory/components/ProductList';
 import { Button } from '@/shared/ui/button';
 import { Plus, Download, Filter } from 'lucide-react';
@@ -15,7 +14,7 @@ const Inventory: React.FC = () => {
   };
 
   return (
-    <MainLayout>
+    <>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Inventory</h1>
@@ -53,7 +52,7 @@ const Inventory: React.FC = () => {
         onClose={() => setIsAddModalOpen(false)} 
         onSubmit={handleAddProduct}
       />
-    </MainLayout>
+    </>
   );
 };
 

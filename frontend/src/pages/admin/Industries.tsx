@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { MainLayout } from '@/shared/components/layout/MainLayout';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { Plus, Tag, Edit, Trash2, Search } from 'lucide-react';
@@ -93,7 +92,7 @@ const Industries: React.FC = () => {
 
 
   return (
-    <MainLayout>
+    <>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Industries</h1>
@@ -199,7 +198,7 @@ const Industries: React.FC = () => {
         title="Delete Industry"
         description="Are you sure you want to delete this industry? This will affect all businesses registered under this category."
       />
-    </MainLayout>
+    </>
   );
 };
 

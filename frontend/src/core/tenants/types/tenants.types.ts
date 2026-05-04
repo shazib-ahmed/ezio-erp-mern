@@ -17,6 +17,7 @@ export interface Tenant {
   id: number;
   name: string;
   phone: string;
+  logo?: string;
   tenantId: number;
   industryId: number;
   industry: Industry;

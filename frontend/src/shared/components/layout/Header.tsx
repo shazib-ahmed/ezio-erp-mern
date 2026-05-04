@@ -1,4 +1,4 @@
-import { LogOut, Menu, Loader2 } from 'lucide-react';
+import { LogOut, Menu, Loader2, User as UserIcon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { ThemeSwitcher } from '@/shared/components/ThemeSwitcher';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
@@ -12,7 +12,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { isSubmitting } = useAppSelector((state) => state.auth);
+  const { user, isSubmitting } = useAppSelector((state) => state.auth);
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
@@ -30,19 +30,28 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
       <div className="flex items-center gap-2">
         <ThemeSwitcher className="static" />
         <div className="h-8 w-px bg-border mx-2" />
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-          onClick={handleLogout}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <LogOut className="h-5 w-5" />
-          )}
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
+            {user?.avatar ? (
+              <img src={user.avatar} alt={user.name || 'User'} className="w-full h-full object-cover" />
+            ) : (
+              <UserIcon className="h-4 w-4 text-primary" />
+            )}
+          </div>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={handleLogout}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <LogOut className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
       </div>
     </header>
   );

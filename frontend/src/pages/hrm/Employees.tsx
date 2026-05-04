@@ -1,5 +1,4 @@
 import React from 'react';
-import { MainLayout } from '@/shared/components/layout/MainLayout';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
@@ -9,9 +8,9 @@ import { cn } from '@/shared/lib/utils';
 import { EmployeeFormModal } from '@/modules/hrm/components/EmployeeFormModal';
 
 const employees = [
-  { id: 1, eid: 'EMP-001', name: 'Shazib Ahmed', pos: 'Full Stack Developer', dept: 'IT', role: 'Super Admin', date: '2023-01-15', status: 'Active' },
-  { id: 2, eid: 'EMP-042', name: 'Zayed Hasan', pos: 'UI/UX Designer', dept: 'Creative', role: 'Employee', date: '2024-03-01', status: 'Active' },
-  { id: 3, eid: 'EMP-089', name: 'Mahrab Khan', pos: 'HR Manager', dept: 'HR', role: 'HR Manager', date: '2022-11-10', status: 'On Leave' },
+  { id: 1, eid: 'EMP-001', name: 'Shazib Ahmed', avatar: 'https://github.com/shadcn.png', pos: 'Full Stack Developer', dept: 'IT', role: 'Super Admin', date: '2023-01-15', status: 'Active' },
+  { id: 2, eid: 'EMP-042', name: 'Zayed Hasan', avatar: null, pos: 'UI/UX Designer', dept: 'Creative', role: 'Employee', date: '2024-03-01', status: 'Active' },
+  { id: 3, eid: 'EMP-089', name: 'Mahrab Khan', avatar: null, pos: 'HR Manager', dept: 'HR', role: 'HR Manager', date: '2022-11-10', status: 'On Leave' },
 ];
 
 const Employees: React.FC = () => {
@@ -23,7 +22,7 @@ const Employees: React.FC = () => {
   };
 
   return (
-    <MainLayout>
+    <>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Employee Directory</h1>
@@ -67,8 +66,12 @@ const Employees: React.FC = () => {
               <TableRow key={emp.id} className="hover:bg-muted/30">
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-                      <span className="text-xs font-bold text-primary">{emp.name.split(' ').map(n => n[0]).join('')}</span>
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden">
+                      {emp.avatar ? (
+                        <img src={emp.avatar} alt={emp.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xs font-bold text-primary">{emp.name.split(' ').map(n => n[0]).join('')}</span>
+                      )}
                     </div>
                     <div>
                       <p className="font-semibold text-foreground">{emp.name}</p>
@@ -109,7 +112,7 @@ const Employees: React.FC = () => {
         onClose={() => setIsModalOpen(false)} 
         onSubmit={handleCreateEmployee}
       />
-    </MainLayout>
+    </>
   );
 };
 

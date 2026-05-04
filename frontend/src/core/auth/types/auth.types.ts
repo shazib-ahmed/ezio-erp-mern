@@ -47,6 +47,7 @@ export interface Tenant {
   id: number;
   name: string;
   phone: string;
+  logo?: string;
   tenantId: number; // The Owner User ID
   industryId: number;
   activeModules?: Module[];
@@ -65,6 +66,7 @@ export interface User {
   username: string;
   email: string;
   phone: string;
+  avatar?: string;
   roles: UserRole[];
   tenants: UserTenant[];
   permissions?: string[]; // Flat permissions array from backend

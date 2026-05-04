@@ -1,10 +1,8 @@
-import React from 'react';
 import { Skeleton } from '@/shared/ui/skeleton';
-import { MainLayout } from '@/shared/components/layout/MainLayout';
 
 export const DashboardSkeleton: React.FC = () => {
   return (
-    <MainLayout>
+    <>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div className="space-y-2">
           <Skeleton className="h-10 w-48" />
@@ -31,6 +29,6 @@ export const DashboardSkeleton: React.FC = () => {
         <Skeleton className="h-[350px] rounded-xl" />
         <Skeleton className="h-[350px] rounded-xl" />
       </div>
-    </MainLayout>
+    </>
   );
 };

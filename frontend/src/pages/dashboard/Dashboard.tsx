@@ -1,5 +1,4 @@
 import React from 'react';
-import { MainLayout } from '@/shared/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { 
@@ -63,7 +62,7 @@ const Dashboard: React.FC = () => {
 
   if (isSuperAdmin) {
     return (
-      <MainLayout>
+      <>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">System Overview</h1>
           <p className="text-muted-foreground">Welcome back, {user?.name}. Here's the platform status.</p>
@@ -96,12 +95,12 @@ const Dashboard: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-      </MainLayout>
+      </>
     );
   }
 
   return (
-    <MainLayout>
+    <>
       {/* Header & Quick Actions */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
@@ -369,7 +368,7 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-    </MainLayout>
+    </>
   );
 };
 

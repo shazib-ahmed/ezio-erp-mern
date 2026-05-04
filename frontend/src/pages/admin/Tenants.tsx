@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { MainLayout } from '@/shared/components/layout/MainLayout';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchTenants, resetTenantsState, setSearchQuery, deleteTenant, updateTenant } from '@/core/tenants/slice/tenantsSlice';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
-import { Edit, Trash2, Eye, Building2, Calendar, Search, Mail, Phone } from 'lucide-react';
+import { Eye, Building2, Calendar, Search, Mail, Phone } from 'lucide-react';
 import { CardSkeleton } from '@/shared/components/skeletons/CardSkeleton';
 import { InfiniteScroll } from '@/shared/components/common/InfiniteScroll';
 import { useDebounce } from '@/shared/hooks/useDebounce';
@@ -56,15 +55,7 @@ const TenantsPage: React.FC = () => {
     setIsDetailsModalOpen(true);
   };
 
-  const handleEditClick = (tenant: any) => {
-    setSelectedTenant(tenant);
-    setIsEditModalOpen(true);
-  };
 
-  const handleDeleteClick = (tenant: any) => {
-    setSelectedTenant(tenant);
-    setIsDeleteModalOpen(true);
-  };
 
   const handleConfirmDelete = async () => {
     if (!selectedTenant) return;
@@ -97,7 +88,7 @@ const TenantsPage: React.FC = () => {
   };
 
   return (
-    <MainLayout>
+    <>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Business Workspaces</h1>
@@ -148,8 +139,12 @@ const TenantsPage: React.FC = () => {
                   {/* Header: Company Name & Phone */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center border border-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300">
-                        <Building2 className="h-6 w-6" />
+                      <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center border border-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300 overflow-hidden">
+                        {tenant.logo ? (
+                          <img src={tenant.logo} alt={tenant.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Building2 className="h-6 w-6" />
+                        )}
                       </div>
                       <div>
                         <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">{tenant.name}</h3>
@@ -265,7 +260,7 @@ const TenantsPage: React.FC = () => {
         title="Delete Workspace"
         description="Are you sure you want to delete this business workspace? This action cannot be undone and all associated data will be permanently removed."
       />
-    </MainLayout>
+    </>
   );
 };
 

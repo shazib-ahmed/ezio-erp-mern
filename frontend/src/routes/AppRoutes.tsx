@@ -1,7 +1,9 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Skeleton } from '@/shared/ui/skeleton';
 import { DashboardSkeleton } from '@/shared/components/skeletons/DashboardSkeleton';
 import { TableSkeleton } from '@/shared/components/skeletons/TableSkeleton';
+import { CardSkeleton } from '@/shared/components/skeletons/CardSkeleton';
 import ProtectedRoute from './ProtectedRoute';
 import PermissionGuard from './PermissionGuard';
 import { Loader2 } from 'lucide-react';
@@ -116,8 +118,50 @@ const AppRoutes: React.FC = () => {
         </Route>
 
         {/* Admin Routes */}
-        <Route path="/admin/tenants" element={<PermissionGuard permissions={['TENANT_MANAGE']}><Suspense fallback={<TableSkeleton />}><Tenants /></Suspense></PermissionGuard>} />
-        <Route path="/admin/industries" element={<PermissionGuard permissions={['INDUSTRY_MANAGE']}><Suspense fallback={<TableSkeleton />}><Industries /></Suspense></PermissionGuard>} />
+        <Route 
+          path="/admin/tenants" 
+          element={
+            <PermissionGuard permissions={['TENANT_MANAGE']}>
+              <Suspense fallback={
+                <div className="animate-in fade-in duration-500">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                    <div className="space-y-2">
+                      <Skeleton className="h-10 w-64 bg-muted/50" />
+                      <Skeleton className="h-4 w-96 bg-muted/50" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+                    <CardSkeleton count={6} />
+                  </div>
+                </div>
+              }>
+                <Tenants />
+              </Suspense>
+            </PermissionGuard>
+          } 
+        />
+        <Route 
+          path="/admin/industries" 
+          element={
+            <PermissionGuard permissions={['INDUSTRY_MANAGE']}>
+              <Suspense fallback={
+                <div className="animate-in fade-in duration-500">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                    <div className="space-y-2">
+                      <Skeleton className="h-10 w-64 bg-muted/50" />
+                      <Skeleton className="h-4 w-96 bg-muted/50" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <CardSkeleton count={8} />
+                  </div>
+                </div>
+              }>
+                <Industries />
+              </Suspense>
+            </PermissionGuard>
+          } 
+        />
 
         <Route 
           path="/settings" 
