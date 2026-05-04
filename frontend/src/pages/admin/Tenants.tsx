@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { MainLayout } from '@/shared/components/layout/MainLayout';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { fetchTenants, resetTenantsState, setSearchQuery } from '@/core/tenants/slice/tenantsSlice';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
+import { fetchTenants, resetTenantsState, setSearchQuery, deleteTenant, updateTenant } from '@/core/tenants/slice/tenantsSlice';
+import { Card, CardContent } from '@/shared/ui/card';
 import { Badge } from '@/shared/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 import { Button } from '@/shared/ui/button';
-import { Edit, Trash2, Eye, Building2, Calendar, Search } from 'lucide-react';
-import { TableSkeleton } from '@/shared/components/skeletons/TableSkeleton';
+import { Edit, Trash2, Eye, Building2, Calendar, Search, Mail, Phone } from 'lucide-react';
+import { CardSkeleton } from '@/shared/components/skeletons/CardSkeleton';
 import { InfiniteScroll } from '@/shared/components/common/InfiniteScroll';
 import { useDebounce } from '@/shared/hooks/useDebounce';
 import { Input } from '@/shared/ui/input';
 import { format } from 'date-fns';
+import { TenantDetailsModal } from '@/modules/admin/components/TenantDetailsModal';
+import { TenantFormModal } from '@/modules/admin/components/TenantFormModal';
+import { DeleteConfirmationModal } from '@/shared/components/modals/DeleteConfirmationModal';
+import { toast } from 'sonner';
 
 const TenantsPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -19,6 +22,12 @@ const TenantsPage: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  const [selectedTenant, setSelectedTenant] = useState<any | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initial fetch and unmount cleanup
   useEffect(() => {
@@ -42,6 +51,51 @@ const TenantsPage: React.FC = () => {
     }
   };
 
+  const handleViewDetails = (tenant: any) => {
+    setSelectedTenant(tenant);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleEditClick = (tenant: any) => {
+    setSelectedTenant(tenant);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteClick = (tenant: any) => {
+    setSelectedTenant(tenant);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedTenant) return;
+    setIsSubmitting(true);
+    try {
+      await dispatch(deleteTenant(selectedTenant.id)).unwrap();
+      toast.success(`Tenant "${selectedTenant.name}" deleted successfully`);
+      setIsDeleteModalOpen(false);
+      setSelectedTenant(null);
+    } catch (err: any) {
+      toast.error(err || 'Failed to delete tenant');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateTenant = async (data: any) => {
+    if (!selectedTenant) return;
+    setIsSubmitting(true);
+    try {
+      await dispatch(updateTenant({ id: selectedTenant.id, data })).unwrap();
+      toast.success(`Tenant "${selectedTenant.name}" updated successfully`);
+      setIsEditModalOpen(false);
+      setSelectedTenant(null);
+    } catch (err: any) {
+      toast.error(err || 'Failed to update tenant');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -59,36 +113,27 @@ const TenantsPage: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button className="gap-2 bg-primary shadow-none h-11 w-full sm:w-auto">
-            <Building2 className="h-4 w-4" /> Export Report
-          </Button>
         </div>
       </div>
 
-      <Card className="border-border bg-card shadow-none overflow-hidden">
-        <CardHeader className="border-b border-border p-6 bg-muted/20">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-bold">Tenant Directory</CardTitle>
-            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10">
-              {tenants.length} Showing
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
+      <InfiniteScroll
+        onLoadMore={handleLoadMore}
+        hasMore={hasMore}
+        isLoading={loading && tenants.length > 0}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
           {loading && tenants.length === 0 ? (
-            <div className="p-6">
-              <TableSkeleton hideHeader />
-            </div>
+            <CardSkeleton count={6} />
           ) : error ? (
-            <div className="p-8 text-center">
+            <div className="col-span-full p-8 text-center bg-card border border-border rounded-2xl">
               <p className="text-destructive font-medium">{error}</p>
               <Button variant="outline" className="mt-4" onClick={() => dispatch(fetchTenants({}))}>
                 Try Again
               </Button>
             </div>
           ) : tenants.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="col-span-full py-20 flex flex-col items-center justify-center bg-card border border-border rounded-2xl border-dashed">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
                 <Search className="h-8 w-8 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-bold">No tenants found</h3>
@@ -97,93 +142,129 @@ const TenantsPage: React.FC = () => {
               </p>
             </div>
           ) : (
-            <InfiniteScroll
-              onLoadMore={handleLoadMore}
-              hasMore={hasMore}
-              isLoading={loading}
-              className="w-full"
-            >
-              <Table>
-                <TableHeader className="bg-muted/30">
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="font-bold pl-6">Company Information</TableHead>
-                    <TableHead className="font-bold">Industry</TableHead>
-                    <TableHead className="font-bold">Owner</TableHead>
-                    <TableHead className="font-bold">Modules</TableHead>
-                    <TableHead className="font-bold">Joined Date</TableHead>
-                    <TableHead className="font-bold text-right pr-6">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tenants.map((tenant) => (
-                    <TableRow key={tenant.id} className="hover:bg-muted/20">
-                      <TableCell className="pl-6 py-4">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-foreground">{tenant.name}</span>
-                          <span className="text-xs text-muted-foreground">{tenant.phone}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="font-semibold bg-indigo-500/5 text-indigo-500 border-indigo-500/10">
-                          {tenant.industry?.name || 'N/A'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                            {tenant.users[0]?.user.name?.charAt(0) || 'U'}
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-semibold">{tenant.users[0]?.user.name}</span>
-                            <span className="text-[10px] text-muted-foreground">{tenant.users[0]?.user.email}</span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex -space-x-2">
-                          {tenant.activeModules.slice(0, 3).map((mod) => (
-                            <div 
-                              key={mod.id} 
-                              className="w-7 h-7 rounded-full border-2 border-card bg-muted flex items-center justify-center"
-                              title={mod.name}
-                            >
-                              <span className="text-[8px] font-bold">{mod.code.split('_')[1]?.charAt(0)}</span>
-                            </div>
-                          ))}
-                          {tenant.activeModules.length > 3 && (
-                            <div className="w-7 h-7 rounded-full border-2 border-card bg-primary/10 flex items-center justify-center text-primary text-[8px] font-bold">
-                              +{tenant.activeModules.length - 3}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
+            tenants.map((tenant) => (
+              <Card key={tenant.id} className="border-border bg-card shadow-none transition-all duration-300 group overflow-hidden flex flex-col">
+                <CardContent className="p-6 flex-1 flex flex-col">
+                  {/* Header: Company Name & Phone */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center border border-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                        <Building2 className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">{tenant.name}</h3>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          {format(new Date(tenant.createdAt), 'dd MMM, yyyy')}
+                          <Phone className="h-3 w-3" />
+                          {tenant.phone}
                         </div>
-                      </TableCell>
-                      <TableCell className="text-right pr-6">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 flex-1">
+                    {/* Industry */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Industry</span>
+                      <Badge variant="outline" className="font-semibold bg-indigo-500/5 text-indigo-500 border-indigo-500/10">
+                        {tenant.industry?.name || 'N/A'}
+                      </Badge>
+                    </div>
+
+                    {/* Owner Info */}
+                    <div className="p-3 rounded-xl bg-muted/30 border border-border/50">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block mb-2">Workspace Owner</span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs border border-primary/20">
+                          {tenant.users[0]?.user.name?.charAt(0) || 'U'}
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </InfiniteScroll>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-foreground line-clamp-1">{tenant.users[0]?.user.name}</span>
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                            <Mail className="h-2.5 w-2.5" />
+                            {tenant.users[0]?.user.email}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Modules */}
+                    <div 
+                      className="cursor-pointer group/modules" 
+                      onClick={() => handleViewDetails(tenant)}
+                      title="Click to view all modules"
+                    >
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block mb-2 group-hover/modules:text-primary transition-colors">Active Modules</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {tenant.activeModules.slice(0, 4).map((mod) => (
+                          <div 
+                            key={mod.id} 
+                            className="px-2 py-1 rounded-md bg-background border border-border text-[9px] font-bold text-foreground group-hover/modules:border-primary/30 transition-colors"
+                          >
+                            {mod.name}
+                          </div>
+                        ))}
+                        {tenant.activeModules.length > 4 && (
+                          <div className="px-2 py-1 rounded-md bg-primary/5 border border-primary/10 text-[9px] font-bold text-primary">
+                            +{tenant.activeModules.length - 4} More
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="mt-6 pt-4 border-t border-border/50 flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      {format(new Date(tenant.createdAt), 'dd MMM, yyyy')}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 text-xs font-bold gap-1.5"
+                        onClick={() => handleViewDetails(tenant)}
+                      >
+                        <Eye className="h-3.5 w-3.5" /> View Details
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </InfiniteScroll>
+
+      <TenantDetailsModal 
+        isOpen={isDetailsModalOpen} 
+        onClose={() => setIsDetailsModalOpen(false)} 
+        tenant={selectedTenant}
+      />
+
+      <TenantFormModal 
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleUpdateTenant}
+        initialData={selectedTenant ? {
+          companyName: selectedTenant.name,
+          subdomain: selectedTenant.subdomain || '',
+          industry: selectedTenant.industry?.name || '',
+          ownerName: selectedTenant.users[0]?.user.name || '',
+          email: selectedTenant.users[0]?.user.email || '',
+          status: 'Active'
+        } : undefined}
+      />
+
+      <DeleteConfirmationModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isSubmitting}
+        itemName={selectedTenant?.name}
+        title="Delete Workspace"
+        description="Are you sure you want to delete this business workspace? This action cannot be undone and all associated data will be permanently removed."
+      />
     </MainLayout>
   );
 };

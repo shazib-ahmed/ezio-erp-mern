@@ -51,6 +51,30 @@ export const fetchTenantById = createAsyncThunk(
   }
 );
 
+export const updateTenant = createAsyncThunk(
+  'tenants/update',
+  async ({ id, data }: { id: number; data: any }, { rejectWithValue }) => {
+    try {
+      const response = await axios.patch(`/admin/tenants/${id}`, data);
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update tenant');
+    }
+  }
+);
+
+export const deleteTenant = createAsyncThunk(
+  'tenants/delete',
+  async (id: number, { rejectWithValue }) => {
+    try {
+      await axios.delete(`/admin/tenants/${id}`);
+      return id;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete tenant');
+    }
+  }
+);
+
 const tenantsSlice = createSlice({
   name: 'tenants',
   initialState,
@@ -103,6 +127,17 @@ const tenantsSlice = createSlice({
       // Fetch By Id
       .addCase(fetchTenantById.fulfilled, (state, action) => {
         state.currentTenant = action.payload;
+      })
+      // Update Tenant
+      .addCase(updateTenant.fulfilled, (state, action) => {
+        const index = state.tenants.findIndex(t => t.id === action.payload.id);
+        if (index !== -1) {
+          state.tenants[index] = { ...state.tenants[index], ...action.payload };
+        }
+      })
+      // Delete Tenant
+      .addCase(deleteTenant.fulfilled, (state, action) => {
+        state.tenants = state.tenants.filter(t => t.id !== action.payload);
       });
   },
 });

@@ -118,7 +118,7 @@ const Industries: React.FC = () => {
       <InfiniteScroll
         onLoadMore={handleLoadMore}
         hasMore={hasMore}
-        isLoading={loading}
+        isLoading={loading && industries.length > 0}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {loading && industries.length === 0 ? (
