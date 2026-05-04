@@ -64,7 +64,7 @@ const Dashboard: React.FC = () => {
     return (
       <>
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">System Overview</h1>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground">Welcome back, {user?.name}. Here's the platform status.</p>
         </div>
 

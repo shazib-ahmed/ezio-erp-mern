@@ -3,12 +3,10 @@ import {
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
+  DialogTitle
 } from '@/shared/ui/dialog';
-import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
-import { Building2, Mail, Phone, Calendar, User as UserIcon, ShieldCheck, Clock } from 'lucide-react';
+import { Building2, Mail, Phone, Calendar, User as UserIcon, ShieldCheck } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface TenantDetailsModalProps {
@@ -30,12 +28,16 @@ const TenantDetailsModal: React.FC<TenantDetailsModalProps> = ({
         <DialogHeader className="p-8 bg-primary/5 border-b border-primary/10 relative">
           <div className="absolute top-0 right-0 p-8">
             <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 font-bold px-3 py-1">
-              Active Workspace
+              Active
             </Badge>
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary">
-              <Building2 className="h-8 w-8" />
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary overflow-hidden shrink-0">
+              {tenant.logo ? (
+                <img src={tenant.logo} alt={tenant.name} className="w-full h-full object-cover" />
+              ) : (
+                <Building2 className="h-8 w-8" />
+              )}
             </div>
             <div>
               <DialogTitle className="text-2xl font-black tracking-tight text-foreground">{tenant.name}</DialogTitle>
@@ -73,12 +75,16 @@ const TenantDetailsModal: React.FC<TenantDetailsModalProps> = ({
             {/* Owner Info */}
             <div className="space-y-4">
               <h4 className="text-xs uppercase tracking-widest font-black text-muted-foreground/60 flex items-center gap-2">
-                <UserIcon className="h-3 w-3" /> Workspace Owner
+                <UserIcon className="h-3 w-3" /> User
               </h4>
               <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold border border-primary/20">
-                  {tenant.users[0]?.user.name?.charAt(0) || 'U'}
-                </div>
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold border border-primary/20 overflow-hidden shrink-0">
+                {tenant.users[0]?.user.avatar ? (
+                  <img src={tenant.users[0].user.avatar} alt={tenant.users[0].user.name} className="w-full h-full object-cover" />
+                ) : (
+                  tenant.users[0]?.user.name?.charAt(0) || 'U'
+                )}
+              </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-bold text-foreground line-clamp-1">{tenant.users[0]?.user.name}</span>
                   <span className="text-[10px] text-muted-foreground flex items-center gap-1">

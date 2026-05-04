@@ -91,7 +91,7 @@ const TenantsPage: React.FC = () => {
     <>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Business Workspaces</h1>
+          <h1 className="text-3xl font-bold text-foreground">All Tenants</h1>
           <p className="text-muted-foreground">Manage and monitor all tenant registrations and active businesses.</p>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -139,7 +139,7 @@ const TenantsPage: React.FC = () => {
                   {/* Header: Company Name & Phone */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center border border-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300 overflow-hidden">
+                      <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center border border-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300 overflow-hidden shrink-0">
                         {tenant.logo ? (
                           <img src={tenant.logo} alt={tenant.name} className="w-full h-full object-cover" />
                         ) : (
@@ -167,10 +167,14 @@ const TenantsPage: React.FC = () => {
 
                     {/* Owner Info */}
                     <div className="p-3 rounded-xl bg-muted/30 border border-border/50">
-                      <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block mb-2">Workspace Owner</span>
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block mb-2">User</span>
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs border border-primary/20">
-                          {tenant.users[0]?.user.name?.charAt(0) || 'U'}
+                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs border border-primary/20 overflow-hidden shrink-0">
+                          {tenant.users[0]?.user.avatar ? (
+                            <img src={tenant.users[0].user.avatar} alt={tenant.users[0].user.name} className="w-full h-full object-cover" />
+                          ) : (
+                            tenant.users[0]?.user.name?.charAt(0) || 'U'
+                          )}
                         </div>
                         <div className="flex flex-col">
                           <span className="text-sm font-bold text-foreground line-clamp-1">{tenant.users[0]?.user.name}</span>

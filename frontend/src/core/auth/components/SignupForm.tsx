@@ -176,7 +176,7 @@ const SignupForm: React.FC = () => {
     
     const resultAction = await dispatch(signup(signupData));
     if (signup.fulfilled.match(resultAction)) {
-      toast.success('Workspace created successfully!');
+      toast.success('Account created successfully!');
       navigate('/dashboard');
     }
   };
@@ -443,11 +443,11 @@ const SignupForm: React.FC = () => {
             {isSubmitting ? (
               <div className="flex items-center gap-2">
                 <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Creating Workspace...</span>
+                <span>Processing...</span>
               </div>
             ) : (
               <>
-                Initialize Ezio-ERP
+                Get Started
                 <ArrowRight className="ml-2 h-5 w-5" />
               </>
             )}

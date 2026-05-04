@@ -185,7 +185,7 @@ const LoginForm: React.FC = () => {
           <div className="mt-6">
             <Button variant="outline" className="w-full h-12 border-border hover:bg-accent hover:text-accent-foreground" asChild>
               <Link to="/signup">
-                Create a workspace
+                Get started now
               </Link>
             </Button>
           </div>
