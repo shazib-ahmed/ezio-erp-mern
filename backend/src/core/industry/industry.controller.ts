@@ -27,16 +27,16 @@ export class IndustryController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.industryService.findOne(id);
+    return this.industryService.findOne(Number(id));
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateIndustryDto: UpdateIndustryDto) {
-    return this.industryService.update(id, updateIndustryDto);
+    return this.industryService.update(Number(id), updateIndustryDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.industryService.remove(id);
+    return this.industryService.remove(Number(id));
   }
 }

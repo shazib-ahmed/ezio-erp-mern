@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsArray, IsInt } from 'class-validator';
 
 export class CreateIndustryDto {
   @IsString()
@@ -10,7 +10,7 @@ export class CreateIndustryDto {
   description?: string;
 
   @IsArray()
-  @IsString({ each: true })
+  @IsInt({ each: true })
   @IsOptional()
-  moduleIds?: string[];
+  moduleIds?: number[];
 }

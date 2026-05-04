@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -10,8 +9,9 @@ import { Checkbox } from '@/shared/ui/checkbox';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { login, clearError } from '@/core/auth/slice/authSlice';
 import { useNavigate } from 'react-router-dom';
-import { Alert, AlertDescription } from '@/shared/ui/alert';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, Mail, Lock, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '@/shared/lib/utils';
 
 const LoginForm: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -20,6 +20,7 @@ const LoginForm: React.FC = () => {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
 
   React.useEffect(() => {
     return () => {
@@ -27,70 +28,116 @@ const LoginForm: React.FC = () => {
     };
   }, [dispatch]);
 
+  // Map backend error to specific field and show toast
+  React.useEffect(() => {
+    if (error) {
+      if (error === 'Invalid credentials') {
+        setFieldErrors(prev => ({ ...prev, password: 'Wrong email or password' }));
+      } else {
+        toast.error(error);
+      }
+    }
+  }, [error]);
+
+  const validate = () => {
+    const newErrors: { email?: string; password?: string } = {};
+    if (!email) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Invalid email format';
+    
+    if (!password) newErrors.password = 'Password is required';
+    else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+
+    setFieldErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
+    
     const resultAction = await dispatch(login({ email, password }));
     if (login.fulfilled.match(resultAction)) {
+      toast.success('Welcome back!');
       navigate('/dashboard');
     }
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    if (fieldErrors.email) setFieldErrors({ ...fieldErrors, email: undefined });
+    if (error) dispatch(clearError());
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+    if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: undefined });
+    if (error) dispatch(clearError());
   };
 
   return (
     <Card className="border-border/40">
       <CardContent className="pt-8">
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        <form className="space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-6" onSubmit={handleSubmit} noValidate>
           <div className="space-y-2">
-            <Label htmlFor="email">Email address</Label>
+            <Label htmlFor="email" className={cn(fieldErrors.email && "text-destructive", loading && "opacity-50")}>Email address</Label>
             <div className="relative rounded-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-muted-foreground" />
+                <Mail className={cn("h-5 w-5", fieldErrors.email ? "text-destructive" : "text-muted-foreground")} />
               </div>
               <Input
                 id="email"
                 type="email"
-                required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={handleEmailChange}
+                error={!!fieldErrors.email}
+                disabled={loading}
                 className="pl-10 h-12 bg-background border-border"
                 placeholder="admin@company.com"
               />
             </div>
+            {fieldErrors.email && (
+              <p className="text-xs font-medium text-destructive mt-1 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
+                <AlertCircle className="h-3 w-3" />
+                {fieldErrors.email}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className={cn(fieldErrors.password && "text-destructive", loading && "opacity-50")}>Password</Label>
             <div className="relative rounded-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-muted-foreground" />
+                <Lock className={cn("h-5 w-5", fieldErrors.password ? "text-destructive" : "text-muted-foreground")} />
               </div>
               <Input
                 id="password"
                 type="password"
-                required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={handlePasswordChange}
+                error={!!fieldErrors.password}
+                disabled={loading}
                 className="pl-10 h-12 bg-background border-border"
                 placeholder="••••••••"
               />
             </div>
+            {fieldErrors.password && (
+              <p className="text-xs font-medium text-destructive mt-1 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
+                <AlertCircle className="h-3 w-3" />
+                {fieldErrors.password}
+              </p>
+            )}
           </div>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Checkbox id="remember-me" />
-              <Label htmlFor="remember-me" className="text-sm text-muted-foreground cursor-pointer font-normal">
+              <Checkbox id="remember-me" disabled={loading} />
+              <Label htmlFor="remember-me" className={cn("text-sm text-muted-foreground cursor-pointer font-normal", loading && "opacity-50 cursor-not-allowed")}>
                 Remember me
               </Label>
             </div>
 
             <div className="text-sm">
-              <Link to="/forgot-password" title="Forgot Password" className="font-medium text-primary hover:text-primary/80 transition-colors">
+              <Link to="/forgot-password" title="Forgot Password" className={cn("font-medium text-primary hover:text-primary/80 transition-colors", loading && "pointer-events-none opacity-50")}>
                 Forgot your password?
               </Link>
             </div>

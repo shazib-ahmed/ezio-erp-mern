@@ -13,48 +13,41 @@ datasource db {
 // ==========================================
 
 model Industry {
-  id          String    @id @default(uuid())
+  id          Int       @id @default(autoincrement())
   name        String    @unique // e.g., Garments, Pharmacy, Retail, IT
   description String?
   modules     Module[]  // Modules available for this industry
   tenants     Tenant[]
   createdAt   DateTime  @default(now())
-}
 
-model Module {
-  id          String     @id @default(uuid())
-  name        String     @unique // e.g., Inventory, HRM, POS, Finance
-  code        String     @unique // e.g., MOD_INV, MOD_POS
-  industries  Industry[]
-  tenants     Tenant[]   @relation("TenantModules")
+  @@index([name])
 }
 
 model Tenant {
-  id            String    @id @default(uuid())
-  name          String
-  companyEmail  String    @unique
-  address       String?
-  industryId    String
+  id            Int       @id @default(autoincrement())
+  name          String    @unique // Company Name
+  phone         String    @unique // Business Phone
+  tenantId      Int       // User ID of the tenant creator/owner
+  industryId    Int
   industry      Industry  @relation(fields: [industryId], references: [id])
-  activeModules Module[]  @relation("TenantModules")
-  plan          Plan      @default(FREE)
-  
-  // Owner/Admin of the tenant
-  ownerId       String?   @unique
-  owner         User?     @relation("TenantOwner", fields: [ownerId], references: [id])
   
   // Relations to business data
-  users         User[]
+  users         UserTenant[]
   products      Product[]
   customers     Customer[]
   sales         Sale[]
   expenses      Expense[]
   transactions  Transaction[]
   accounts      Account[]
-  roles         Role[]
-
+  activeModules Module[]  @relation("TenantModules")
+  
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([industryId])
+  @@index([name])
+  @@index([phone])
 }
 
 enum Plan {
@@ -65,47 +58,126 @@ enum Plan {
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
+  name      String?
+  username  String   @unique
   email     String   @unique
+  phone     String   @unique
   password  String
   
-  roleId    String
-  role      Role     @relation(fields: [roleId], references: [id])
+  roles     UserRole[]
+  tenants   UserTenant[]
   
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  
-  ownedTenant Tenant? @relation("TenantOwner")
+  refreshToken String? @db.Text
   
   createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([username])
+  @@index([phone])
 }
 
-model Role {
-  id          String       @id @default(uuid())
-  name        String       // e.g., SUPER_ADMIN, ADMIN, MANAGER
-  description String?
-  
+model UserTenant {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, tenantId])
+  @@index([userId])
+  @@index([tenantId])
+}
+
+model UserRole {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  roleId    Int
+  role      Role     @relation(fields: [roleId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+model Module {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  code        String    @unique
+  icon        String?
+  features    Feature[]
   permissions Permission[]
-  users       User[]
+  industries  Industry[]
+  tenants     Tenant[]   @relation("TenantModules")
   
-  tenantId    String?      // Null for System Roles (SUPER_ADMIN)
-  tenant      Tenant?      @relation(fields: [tenantId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([code])
+}
+
+model Feature {
+  id          Int          @id @default(autoincrement())
+  name        String
+  code        String       @unique
+  moduleId    Int
+  module      Module       @relation(fields: [moduleId], references: [id])
+  permissions Permission[]
   
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  @@unique([name, tenantId])
+  @@index([moduleId])
+  @@index([code])
 }
 
 model Permission {
-  id          String   @id @default(uuid())
-  name        String   @unique // e.g., "Create Product"
-  code        String   @unique // e.g., "PRODUCT_CREATE"
-  module      String   // e.g., "INVENTORY"
+  id          Int       @id @default(autoincrement())
+  name        String
+  code        String    @unique // e.g., USER_VIEW, SALE_CREATE
   
-  roles       Role[]
+  moduleId    Int
+  module      Module    @relation(fields: [moduleId], references: [id])
+  featureId   Int
+  feature     Feature   @relation(fields: [featureId], references: [id])
   
-  createdAt   DateTime @default(now())
+  roles       RolePermission[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([moduleId])
+  @@index([featureId])
+  @@index([code])
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique // e.g., SUPER_ADMIN, TENANT, MANAGER, STAFF
+  permissions RolePermission[]
+  users       UserRole[]
+  
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([name])
+}
+
+model RolePermission {
+  id           Int        @id @default(autoincrement())
+  roleId       Int
+  role         Role       @relation(fields: [roleId], references: [id])
+  permissionId Int
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
 }
 
 // ==========================================
@@ -113,7 +185,7 @@ model Permission {
 // ==========================================
 
 model Product {
-  id            String   @id @default(uuid())
+  id            Int      @id @default(autoincrement())
   name          String
   sku           String
   barcode       String?
@@ -123,9 +195,12 @@ model Product {
   unit          String   @default("pcs") // pcs, kg, ltr
   attributes    Json?    // For Industry Specific (e.g., Size: XL, Color: Blue)
   
-  tenantId      String
+  tenantId      Int
   tenant        Tenant   @relation(fields: [tenantId], references: [id])
   saleItems     SaleItem[]
+
+  @@index([tenantId])
+  @@index([sku])
 }
 
 // ==========================================
@@ -133,21 +208,24 @@ model Product {
 // ==========================================
 
 model Customer {
-  id          String   @id @default(uuid())
+  id          Int      @id @default(autoincrement())
   name        String
   phone       String?
   email       String?
   address     String?
   totalDue    Decimal  @default(0.0) @db.Decimal(18, 2) // Total Outstanding Baki
   
-  tenantId    String
+  tenantId    Int
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
   sales       Sale[]
   transactions Transaction[]
+
+  @@index([tenantId])
+  @@index([phone])
 }
 
 model Sale {
-  id              String         @id @default(uuid())
+  id              Int            @id @default(autoincrement())
   invoiceNo       String         @unique // e.g., INV-2026-0001
   totalAmount     Decimal        @db.Decimal(18, 2)
   discount        Decimal        @default(0.0) @db.Decimal(18, 2)
@@ -156,25 +234,32 @@ model Sale {
   dueAmount       Decimal        @default(0.0) @db.Decimal(18, 2)
   
   status          PaymentStatus  @default(PAID)
-  tenantId        String
+  tenantId        Int
   tenant          Tenant         @relation(fields: [tenantId], references: [id])
-  customerId      String?
+  customerId      Int?
   customer        Customer?      @relation(fields: [customerId], references: [id])
   items           SaleItem[]
   transactions    Transaction[]
   
   createdAt       DateTime       @default(now())
+
+  @@index([tenantId])
+  @@index([customerId])
+  @@index([invoiceNo])
 }
 
 model SaleItem {
-  id          String   @id @default(uuid())
-  saleId      String
+  id          Int      @id @default(autoincrement())
+  saleId      Int
   sale        Sale     @relation(fields: [saleId], references: [id])
-  productId   String
+  productId   Int
   product     Product  @relation(fields: [productId], references: [id])
   quantity    Int
   unitPrice   Decimal  @db.Decimal(18, 2)
   subTotal    Decimal  @db.Decimal(18, 2)
+
+  @@index([saleId])
+  @@index([productId])
 }
 
 enum PaymentStatus {
@@ -188,7 +273,7 @@ enum PaymentStatus {
 // ==========================================
 
 model Transaction {
-  id              String          @id @default(uuid())
+  id              Int             @id @default(autoincrement())
   trxId           String          @unique // e.g., TRX-987654321
   amount          Decimal         @db.Decimal(18, 2)
   type            TransactionType 
@@ -197,18 +282,24 @@ model Transaction {
   referenceNo     String?         // Check No, Bkash TrxID, Bank Ref
   note            String?
   
-  tenantId        String
+  tenantId        Int
   tenant          Tenant          @relation(fields: [tenantId], references: [id])
   
   // Relations (Optional based on transaction source)
-  saleId          String?
+  saleId          Int?
   sale            Sale?           @relation(fields: [saleId], references: [id])
-  expenseId       String?
+  expenseId       Int?
   expense         Expense?        @relation(fields: [expenseId], references: [id])
-  customerId      String?
+  customerId      Int?
   customer        Customer?       @relation(fields: [customerId], references: [id])
   
   createdAt       DateTime        @default(now())
+
+  @@index([tenantId])
+  @@index([saleId])
+  @@index([expenseId])
+  @@index([customerId])
+  @@index([trxId])
 }
 
 enum TransactionType {
@@ -229,24 +320,28 @@ enum PaymentMethod {
 // ==========================================
 
 model Expense {
-  id              String   @id @default(uuid())
+  id              Int      @id @default(autoincrement())
   title           String
   category        String   // e.g., Rent, Utility, Salary
   amount          Decimal  @db.Decimal(18, 2)
   expenseDate     DateTime @default(now())
   
-  tenantId        String
+  tenantId        Int
   tenant          Tenant   @relation(fields: [tenantId], references: [id])
   transactions    Transaction[]
+
+  @@index([tenantId])
 }
 
 model Account {
-  id          String   @id @default(uuid())
+  id          Int      @id @default(autoincrement())
   name        String   // e.g., Main Cash, DBBL Bank, Business Petty Cash
   accountType String   // CASH, BANK, MOBILE_WALLET
   balance     Decimal  @default(0.0) @db.Decimal(18, 2)
   
-  tenantId    String
+  tenantId    Int
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
   updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
 }

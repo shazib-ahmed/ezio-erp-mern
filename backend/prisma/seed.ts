@@ -1,4 +1,4 @@
-import { PrismaClient, Permission, Role, Industry, Tenant, User } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -6,124 +6,240 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seed started...');
 
-  // 1. Seed Permissions
-  const permissionsData = [
-    { name: 'Create User', code: 'USER_CREATE', module: 'ADMIN' },
-    { name: 'View User', code: 'USER_VIEW', module: 'ADMIN' },
-    { name: 'Edit User', code: 'USER_EDIT', module: 'ADMIN' },
-    { name: 'Delete User', code: 'USER_DELETE', module: 'ADMIN' },
-    { name: 'Manage Roles', code: 'ROLE_MANAGE', module: 'ADMIN' },
-    { name: 'Create Industry', code: 'INDUSTRY_CREATE', module: 'SUPER_ADMIN' },
-    { name: 'View Industries', code: 'INDUSTRY_VIEW', module: 'SUPER_ADMIN' },
-  ];
-
-  console.log('Seeding permissions...');
-  const permissions: Permission[] = [];
-  for (const p of permissionsData) {
-    const permission = await prisma.permission.upsert({
-      where: { code: p.code },
-      update: { name: p.name, module: p.module },
-      create: p,
-    });
-    permissions.push(permission);
-  }
-
-  // 2. Seed System Roles
-  console.log('Seeding system roles...');
-  let superAdminRole = await prisma.role.findFirst({
-    where: { name: 'SUPER_ADMIN', tenantId: null }
-  });
-
-  if (!superAdminRole) {
-    superAdminRole = await prisma.role.create({
-      data: {
-        name: 'SUPER_ADMIN',
-        description: 'System wide access to all features',
-        permissions: {
-          connect: permissions.map((p) => ({ id: p.id })),
+  // 1. DEFINE DYNAMIC MODULES, FEATURES & PERMISSIONS
+  const modulesData = [
+    {
+      name: 'Authentication',
+      code: 'MOD_AUTH',
+      icon: 'Lock',
+      features: [
+        {
+          name: 'Users',
+          code: 'FEAT_USER',
+          permissions: [
+            { name: 'View Users', code: 'USER_VIEW' },
+            { name: 'Create User', code: 'USER_CREATE' },
+            { name: 'Update User', code: 'USER_UPDATE' },
+            { name: 'Delete User', code: 'USER_DELETE' },
+          ]
         },
-      },
-    });
-  }
-
-  // 3. Seed Industries
-  const industriesData = [
-    { name: 'Technology', description: 'System Administration and IT Services' },
-    { name: 'Garments & Textile', description: 'Style, Color, Size Matrix' },
-    { name: 'Pharmaceuticals', description: 'Medicine manufacturing and chemical processing' },
-    { name: 'Food & Beverage', description: 'Food processing and beverage production' },
-    { name: 'Automobile', description: 'Vehicle parts and assembly' },
-    { name: 'Electronics Manufacturing', description: 'Gagdet and electronics assembly' },
-    { name: 'E-commerce', description: 'Online shops and digital marketplaces' },
-    { name: 'Super Shop', description: 'Grocery chains and supermarkets' },
-    { name: 'Fashion & Lifestyle', description: 'Apparel outlets and lifestyle showrooms' },
-    { name: 'Electronics Retail', description: 'Electronics dealers and showrooms' },
-    { name: 'FMCG Distribution', description: 'Fast Moving Consumer Goods distribution' },
-    { name: 'Hospital & Clinic', description: 'Patient and Doctor management system' },
-    { name: 'Diagnostic Center', description: 'Lab reports and diagnostic management' },
-    { name: 'Pharmacy Chain', description: 'Drug generic names and Expiry tracking' },
-    { name: 'School & College', description: 'Student IDs, Fee collection, and Exams' },
-    { name: 'University', description: 'Higher education academic management' },
-    { name: 'Coaching Center', description: 'Skill development and tutoring' },
-    { name: 'IT & Software', description: 'Project management and software services' },
-    { name: 'Construction & Real Estate', description: 'Plot/Flat mapping and Installment schedules' },
-    { name: 'Digital Marketing', description: 'Agency management and client campaigns' },
-    { name: 'Consultancy Firm', description: 'Law, Audit, and Advisory firms' },
-    { name: 'Hotel & Resort', description: 'Booking and hospitality management' },
-    { name: 'Restaurant & Cafe', description: 'POS, Table booking, and KOT management' },
-    { name: 'Travel Agency', description: 'Tour and travel booking services' },
-    { name: 'Courier Service', description: 'Parcel tracking and delivery management' },
-    { name: 'Shipping & Freight', description: 'International shipping and logistics' },
-    { name: 'Warehousing', description: 'Storage and supply chain management' },
+        {
+          name: 'Roles',
+          code: 'FEAT_ROLE',
+          permissions: [
+            { name: 'Manage Roles', code: 'ROLE_MANAGE' },
+          ]
+        }
+      ]
+    },
+    {
+      name: 'Inventory',
+      code: 'MOD_INVENTORY',
+      icon: 'Package',
+      features: [
+        {
+          name: 'Products',
+          code: 'FEAT_PRODUCT',
+          permissions: [
+            { name: 'View Products', code: 'PRODUCT_VIEW' },
+            { name: 'Create Product', code: 'PRODUCT_CREATE' },
+            { name: 'Update Product', code: 'PRODUCT_UPDATE' },
+            { name: 'Delete Product', code: 'PRODUCT_DELETE' },
+          ]
+        },
+        {
+          name: 'Stock',
+          code: 'FEAT_STOCK',
+          permissions: [
+            { name: 'Adjust Stock', code: 'STOCK_ADJUST' },
+          ]
+        }
+      ]
+    },
+    {
+      name: 'Sales',
+      code: 'MOD_SALES',
+      icon: 'ShoppingCart',
+      features: [
+        {
+          name: 'Invoices',
+          code: 'FEAT_INVOICE',
+          permissions: [
+            { name: 'View Sales', code: 'SALE_VIEW' },
+            { name: 'Create Sale', code: 'SALE_CREATE' },
+            { name: 'Delete Sale', code: 'SALE_DELETE' },
+          ]
+        },
+        {
+          name: 'Customers',
+          code: 'FEAT_CUSTOMER',
+          permissions: [
+            { name: 'View Customers', code: 'CUSTOMER_VIEW' },
+            { name: 'Manage Customers', code: 'CUSTOMER_MANAGE' },
+          ]
+        }
+      ]
+    },
+    {
+      name: 'Finance',
+      code: 'MOD_FINANCE',
+      icon: 'DollarSign',
+      features: [
+        {
+          name: 'Transactions',
+          code: 'FEAT_TRX',
+          permissions: [
+            { name: 'View Transactions', code: 'TRX_VIEW' },
+            { name: 'Create Transaction', code: 'TRX_CREATE' },
+          ]
+        },
+        {
+          name: 'Expenses',
+          code: 'FEAT_EXPENSE',
+          permissions: [
+            { name: 'View Expenses', code: 'EXPENSE_VIEW' },
+            { name: 'Manage Expenses', code: 'EXPENSE_MANAGE' },
+          ]
+        },
+        {
+          name: 'Accounts',
+          code: 'FEAT_ACCOUNT',
+          permissions: [
+            { name: 'View Accounts', code: 'ACCOUNT_VIEW' },
+            { name: 'Manage Accounts', code: 'ACCOUNT_MANAGE' },
+          ]
+        }
+      ]
+    },
+    {
+      name: 'System',
+      code: 'MOD_SYSTEM',
+      icon: 'Settings',
+      features: [
+        {
+          name: 'Settings',
+          code: 'FEAT_SETTINGS',
+          permissions: [
+            { name: 'Manage Settings', code: 'SETTINGS_MANAGE' },
+          ]
+        },
+        {
+          name: 'Industries',
+          code: 'FEAT_INDUSTRY',
+          permissions: [
+            { name: 'Manage Industries', code: 'INDUSTRY_MANAGE' },
+          ]
+        }
+      ]
+    }
   ];
 
-  console.log('Seeding industries...');
-  const industryMap: Record<string, string> = {};
-  for (const ind of industriesData) {
-    const created = await prisma.industry.upsert({
-      where: { name: ind.name },
-      update: { description: ind.description },
-      create: ind,
+  console.log('Seeding modules, features and permissions...');
+  const allPermissions: any[] = [];
+  const createdModules: any[] = [];
+
+  for (const mData of modulesData) {
+    const module = await (prisma as any).module.upsert({
+      where: { code: mData.code },
+      update: { name: mData.name, icon: mData.icon },
+      create: { name: mData.name, code: mData.code, icon: mData.icon },
     });
-    industryMap[ind.name] = created.id;
+    createdModules.push(module);
+
+    for (const fData of mData.features) {
+      const feature = await (prisma as any).feature.upsert({
+        where: { code: fData.code },
+        update: { name: fData.name, moduleId: module.id },
+        create: { name: fData.name, code: fData.code, moduleId: module.id },
+      });
+
+      for (const pData of fData.permissions) {
+        const permission = await (prisma as any).permission.upsert({
+          where: { code: pData.code },
+          update: { name: pData.name, moduleId: module.id, featureId: feature.id },
+          create: { name: pData.name, code: pData.code, moduleId: module.id, featureId: feature.id },
+        });
+        allPermissions.push(permission);
+      }
+    }
   }
 
-  // 4. Create System Tenant
-  console.log('Upserting System Tenant...');
-  const tenant = await prisma.tenant.upsert({
-    where: { companyEmail: 'system@ezio.com' },
+  // 2. SEED GLOBAL ROLES
+  console.log('Seeding global roles...');
+  const superAdminRole = await (prisma as any).role.upsert({
+    where: { name: 'SUPER_ADMIN' },
     update: {},
-    create: {
-      name: 'Ezio ERP System',
-      companyEmail: 'system@ezio.com',
-      address: 'Dhaka, Bangladesh',
-      industryId: industryMap['Technology'],
-      plan: 'ENTERPRISE',
-    },
+    create: { name: 'SUPER_ADMIN' },
   });
 
-  // 5. Create Super Admin User and Link as Tenant Owner
-  console.log('Seeding Super Admin and setting as Tenant Owner...');
+  const tenantRole = await (prisma as any).role.upsert({
+    where: { name: 'TENANT' },
+    update: {},
+    create: { name: 'TENANT' },
+  });
+
+  // 3. LINK ALL PERMISSIONS TO SUPER_ADMIN
+  console.log('Linking all permissions to SUPER_ADMIN...');
+  for (const p of allPermissions) {
+    await (prisma as any).rolePermission.upsert({
+      where: { 
+        roleId_permissionId: {
+          roleId: superAdminRole.id,
+          permissionId: p.id
+        }
+      },
+      update: {},
+      create: { roleId: superAdminRole.id, permissionId: p.id }
+    });
+  }
+
+  // 4. SEED INDUSTRIES & LINK MODULES
+  console.log('Seeding industries...');
+  await (prisma as any).industry.upsert({
+    where: { name: 'Technology' },
+    update: {
+      modules: {
+        set: createdModules.map(m => ({ id: m.id }))
+      }
+    },
+    create: { 
+      name: 'Technology', 
+      description: 'IT and Software',
+      modules: {
+        connect: createdModules.map(m => ({ id: m.id }))
+      }
+    }
+  });
+
+  // 5. CREATE SUPER ADMIN USER (GLOBAL)
+  console.log('Creating Super Admin user...');
   const hashedPassword = await bcrypt.hash('admin123456', 10);
-  const superAdmin = await prisma.user.upsert({
+  const superAdmin = await (prisma as any).user.upsert({
     where: { email: 'admin@ezio.com' },
     update: {
-      password: hashedPassword,
-      roleId: superAdminRole.id,
-      tenantId: tenant.id,
+      name: 'Super Admin',
+      username: 'superadmin',
+      phone: '01711111111',
     },
     create: {
+      name: 'Super Admin',
+      username: 'superadmin',
       email: 'admin@ezio.com',
+      phone: '01711111111',
       password: hashedPassword,
-      roleId: superAdminRole.id,
-      tenantId: tenant.id,
     },
   });
 
-  // Now explicitly set the owner of the tenant
-  await prisma.tenant.update({
-    where: { id: tenant.id },
-    data: { ownerId: superAdmin.id }
+  // Link Super Admin Role
+  await (prisma as any).userRole.upsert({
+    where: {
+      userId_roleId: {
+        userId: superAdmin.id,
+        roleId: superAdminRole.id
+      }
+    },
+    update: {},
+    create: { userId: superAdmin.id, roleId: superAdminRole.id }
   });
 
   console.log('Seed completed successfully!');

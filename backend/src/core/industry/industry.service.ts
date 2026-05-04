@@ -7,9 +7,9 @@ import { Industry } from '@prisma/client';
 export interface IIndustryService {
   create(createIndustryDto: CreateIndustryDto): Promise<Industry>;
   findAll(): Promise<Industry[]>;
-  findOne(id: string): Promise<Industry>;
-  update(id: string, updateIndustryDto: UpdateIndustryDto): Promise<Industry>;
-  remove(id: string): Promise<Industry>;
+  findOne(id: number): Promise<Industry>;
+  update(id: number, updateIndustryDto: UpdateIndustryDto): Promise<Industry>;
+  remove(id: number): Promise<Industry>;
 }
 
 @Injectable()
@@ -44,7 +44,7 @@ export class IndustryService implements IIndustryService {
     });
   }
 
-  async findOne(id: string): Promise<Industry> {
+  async findOne(id: number): Promise<Industry> {
     const industry = await this.prisma.industry.findUnique({
       where: { id },
       include: {
@@ -60,7 +60,7 @@ export class IndustryService implements IIndustryService {
     return industry;
   }
 
-  async update(id: string, updateIndustryDto: UpdateIndustryDto): Promise<Industry> {
+  async update(id: number, updateIndustryDto: UpdateIndustryDto): Promise<Industry> {
     const { name, description, moduleIds } = updateIndustryDto;
 
     return this.prisma.industry.update({
@@ -75,7 +75,7 @@ export class IndustryService implements IIndustryService {
     });
   }
 
-  async remove(id: string): Promise<Industry> {
+  async remove(id: number): Promise<Industry> {
     return this.prisma.industry.delete({
       where: { id }
     });
