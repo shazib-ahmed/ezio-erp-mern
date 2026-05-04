@@ -22,4 +22,5 @@ export interface IndustryState {
   error: string | null;
   nextCursor: number | null;
   hasMore: boolean;
+  searchQuery: string;
 }

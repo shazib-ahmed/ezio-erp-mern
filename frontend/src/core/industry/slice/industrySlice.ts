@@ -9,14 +9,15 @@ const initialState: IndustryState = {
   error: null,
   nextCursor: null,
   hasMore: true,
+  searchQuery: '',
 };
 
 export const fetchIndustries = createAsyncThunk(
   'industry/fetchIndustries',
-  async (cursor: number | undefined, { rejectWithValue }) => {
+  async ({ cursor, search }: { cursor?: number; search?: string } = {}, { rejectWithValue }) => {
     try {
       const response = await axios.get('/industries', {
-        params: { limit: 12, cursor }
+        params: { limit: 12, cursor, search }
       });
       return response.data.data; // { data, nextCursor }
     } catch (error: any) {
@@ -66,6 +67,13 @@ const industrySlice = createSlice({
   initialState,
   reducers: {
     resetIndustryState: (state) => {
+      state.industries = [];
+      state.nextCursor = null;
+      state.hasMore = true;
+      state.searchQuery = '';
+    },
+    setSearchQuery: (state, action: PayloadAction<string>) => {
+      state.searchQuery = action.payload;
       state.industries = [];
       state.nextCursor = null;
       state.hasMore = true;
@@ -136,5 +144,5 @@ const industrySlice = createSlice({
   },
 });
 
-export const { resetIndustryState } = industrySlice.actions;
+export const { resetIndustryState, setSearchQuery } = industrySlice.actions;
 export default industrySlice.reducer;

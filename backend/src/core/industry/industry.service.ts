@@ -6,7 +6,7 @@ import { Industry } from '@prisma/client';
 
 export interface IIndustryService {
   create(createIndustryDto: CreateIndustryDto): Promise<Industry>;
-  findAll(limit?: number, cursor?: number): Promise<{ data: Industry[]; nextCursor: number | null }>;
+  findAll(limit?: number, cursor?: number, search?: string): Promise<{ data: Industry[]; nextCursor: number | null }>;
   findOne(id: number): Promise<Industry>;
   update(id: number, updateIndustryDto: UpdateIndustryDto): Promise<Industry>;
   remove(id: number): Promise<Industry>;
@@ -33,10 +33,15 @@ export class IndustryService implements IIndustryService {
     });
   }
 
-  async findAll(limit: number = 10, cursor?: number): Promise<{ data: Industry[]; nextCursor: number | null }> {
+  async findAll(limit: number = 10, cursor?: number, search?: string): Promise<{ data: Industry[]; nextCursor: number | null }> {
+    const whereClause = search ? {
+      name: { contains: search }
+    } : undefined;
+
     const industries = await this.prisma.industry.findMany({
       take: limit + 1,
       cursor: cursor ? { id: cursor } : undefined,
+      where: whereClause,
       orderBy: { id: 'asc' },
       include: {
         modules: true,

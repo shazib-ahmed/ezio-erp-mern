@@ -28,11 +28,13 @@ export class IndustryController {
   @Public()
   findAll(
     @Query('limit') limit?: string,
-    @Query('cursor') cursor?: string
+    @Query('cursor') cursor?: string,
+    @Query('search') search?: string
   ) {
     return this.industryService.findAll(
       limit ? Number(limit) : 10,
-      cursor ? Number(cursor) : undefined
+      cursor ? Number(cursor) : undefined,
+      search
     );
   }
 

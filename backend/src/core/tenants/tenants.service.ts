@@ -5,10 +5,30 @@ import { PrismaService } from '@/shared/prisma/prisma.service';
 export class TenantsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(limit: number = 10, cursor?: number) {
+  async findAll(limit: number = 10, cursor?: number, search?: string) {
+    const whereClause = search ? {
+      OR: [
+        { name: { contains: search } },
+        { phone: { contains: search } },
+        {
+          users: {
+            some: {
+              user: {
+                OR: [
+                  { name: { contains: search } },
+                  { email: { contains: search } }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    } : undefined;
+
     const tenants = await this.prisma.tenant.findMany({
       take: limit + 1,
       cursor: cursor ? { id: cursor } : undefined,
+      where: whereClause,
       include: {
         industry: true,
         users: {

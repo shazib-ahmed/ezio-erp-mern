@@ -37,4 +37,5 @@ export interface TenantsState {
   } | null;
   nextCursor: number | null;
   hasMore: boolean;
+  searchQuery: string;
 }

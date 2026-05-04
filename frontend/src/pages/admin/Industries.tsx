@@ -2,35 +2,49 @@ import React, { useState } from 'react';
 import { MainLayout } from '@/shared/components/layout/MainLayout';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
-import { Plus, Tag, Edit, Trash2 } from 'lucide-react';
+import { Plus, Tag, Edit, Trash2, Search } from 'lucide-react';
 import { IndustryFormModal } from '@/modules/admin/components/IndustryFormModal';
 import { DeleteConfirmationModal } from '@/shared/components/modals/DeleteConfirmationModal';
 import { InfiniteScroll } from '@/shared/components/common/InfiniteScroll';
+import { useDebounce } from '@/shared/hooks/useDebounce';
+import { Input } from '@/shared/ui/input';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { fetchIndustries, createIndustry, deleteIndustry, updateIndustry, resetIndustryState } from '@/core/industry/slice/industrySlice';
-import { TableSkeleton } from '@/shared/components/skeletons/TableSkeleton';
+import { fetchIndustries, createIndustry, deleteIndustry, updateIndustry, resetIndustryState, setSearchQuery } from '@/core/industry/slice/industrySlice';
+import { CardSkeleton } from '@/shared/components/skeletons/CardSkeleton';
 import { Industry } from '@/core/industry/types/industry.types';
 import { toast } from 'sonner';
 
 const Industries: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { industries, loading, isSubmitting, hasMore, nextCursor } = useAppSelector((state) => state.industry);
+  const { industries, loading, isSubmitting, hasMore, nextCursor, searchQuery } = useAppSelector((state) => state.industry);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingIndustry, setEditingIndustry] = useState<Industry | null>(null);
   
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [industryToDelete, setIndustryToDelete] = useState<Industry | null>(null);
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  // Initial fetch and unmount cleanup
   React.useEffect(() => {
-    dispatch(fetchIndustries());
+    dispatch(fetchIndustries({}));
     return () => {
       dispatch(resetIndustryState());
     };
   }, [dispatch]);
 
+  // Handle search changes
+  React.useEffect(() => {
+    if (debouncedSearchTerm !== searchQuery) {
+      dispatch(setSearchQuery(debouncedSearchTerm));
+      dispatch(fetchIndustries({ search: debouncedSearchTerm }));
+    }
+  }, [debouncedSearchTerm, searchQuery, dispatch]);
+
   const handleLoadMore = () => {
     if (nextCursor && !loading) {
-      dispatch(fetchIndustries(nextCursor));
+      dispatch(fetchIndustries({ cursor: nextCursor, search: searchQuery }));
     }
   };
 
@@ -76,13 +90,7 @@ const Industries: React.FC = () => {
     }
   };
 
-  if (loading && industries.length === 0) return (
-    <MainLayout>
-      <div className="p-8">
-        <TableSkeleton />
-      </div>
-    </MainLayout>
-  );
+
 
   return (
     <MainLayout>
@@ -91,9 +99,20 @@ const Industries: React.FC = () => {
           <h1 className="text-3xl font-bold text-foreground">Industries</h1>
           <p className="text-muted-foreground">Manage business categories and industry-specific defaults.</p>
         </div>
-        <Button className="gap-2 bg-primary shadow-none h-11" onClick={() => handleOpenModal()}>
-          <Plus className="h-4 w-4" /> Add Industry
-        </Button>
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search industries..." 
+              className="pl-9 bg-card shadow-none border-border h-11"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Button className="gap-2 bg-primary shadow-none h-11 w-full sm:w-auto" onClick={() => handleOpenModal()}>
+            <Plus className="h-4 w-4" /> Add Industry
+          </Button>
+        </div>
       </div>
 
       <InfiniteScroll
@@ -102,13 +121,17 @@ const Industries: React.FC = () => {
         isLoading={loading}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {industries.length === 0 && !loading ? (
+          {loading && industries.length === 0 ? (
+            <CardSkeleton count={8} />
+          ) : industries.length === 0 ? (
             <div className="col-span-full py-20 flex flex-col items-center justify-center bg-card border border-border rounded-2xl border-dashed">
               <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                <Tag className="h-8 w-8 text-muted-foreground opacity-20" />
+                <Search className="h-8 w-8 text-muted-foreground opacity-20" />
               </div>
               <h3 className="text-lg font-bold">No industries found</h3>
-              <p className="text-muted-foreground">Click "Add Industry" to create your first business sector.</p>
+              <p className="text-muted-foreground">
+                {searchQuery ? `No results found for "${searchQuery}"` : 'Click "Add Industry" to create your first business sector.'}
+              </p>
             </div>
           ) : (
             industries.map((ind: Industry) => (

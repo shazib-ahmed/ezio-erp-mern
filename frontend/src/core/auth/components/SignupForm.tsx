@@ -45,16 +45,17 @@ const SignupForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [sameAsPersonal, setSameAsPersonal] = useState(false);
+  const [phoneSameAsPersonal, setPhoneSameAsPersonal] = useState(false);
+  const [emailSameAsPersonal, setEmailSameAsPersonal] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Load industries from API
   useEffect(() => {
     const fetchIndustries = async () => {
       try {
-        const response = await axios.get('/industries');
-        // The backend uses a TransformInterceptor that wraps data in { success: true, data: [...] }
-        setIndustries(response.data.data || []);
+        const response = await axios.get('/industries', { params: { limit: 100 } });
+        // The backend returns { data: Industry[], nextCursor } inside response.data.data
+        setIndustries(response.data.data.data || []);
       } catch (err) {
         console.error('Failed to fetch industries', err);
         toast.error('Could not load industries');
@@ -91,9 +92,14 @@ const SignupForm: React.FC = () => {
     setFormData(prev => {
       const newData = { ...prev, [name]: value };
       
-      // If sameAsPersonal is true and personal phone is changing, sync business phone
-      if (sameAsPersonal && name === 'phone') {
+      // Sync phone if enabled
+      if (phoneSameAsPersonal && name === 'phone') {
         newData.businessPhone = value;
+      }
+      
+      // Sync email if enabled
+      if (emailSameAsPersonal && name === 'adminEmail') {
+        newData.companyEmail = value;
       }
       
       return newData;
@@ -109,10 +115,17 @@ const SignupForm: React.FC = () => {
     if (error) dispatch(clearError());
   };
 
-  const handleCheckboxChange = (checked: boolean) => {
-    setSameAsPersonal(checked);
+  const handlePhoneCheckboxChange = (checked: boolean) => {
+    setPhoneSameAsPersonal(checked);
     if (checked) {
       setFormData(prev => ({ ...prev, businessPhone: prev.phone }));
+    }
+  };
+
+  const handleEmailCheckboxChange = (checked: boolean) => {
+    setEmailSameAsPersonal(checked);
+    if (checked) {
+      setFormData(prev => ({ ...prev, companyEmail: prev.adminEmail }));
     }
   };
 
@@ -158,9 +171,10 @@ const SignupForm: React.FC = () => {
     e.preventDefault();
     if (!validate()) return;
     
-    // We send adminEmail as companyEmail for simplicity in this DTO if needed
-    // or keep them separate. Our backend RegisterDto has adminEmail and companyEmail.
-    const resultAction = await dispatch(signup(formData));
+    // Create a copy of formData and remove confirmPassword before sending to backend
+    const { confirmPassword, ...signupData } = formData;
+    
+    const resultAction = await dispatch(signup(signupData));
     if (signup.fulfilled.match(resultAction)) {
       toast.success('Workspace created successfully!');
       navigate('/dashboard');
@@ -172,103 +186,7 @@ const SignupForm: React.FC = () => {
       <CardContent className="pt-8 px-6 pb-8">
         <form className="space-y-8" onSubmit={handleSubmit} noValidate>
           
-          {/* Section 1: Business Details */}
-          <div className="space-y-5">
-            <div className="flex items-center gap-3 border-b border-border/50 pb-3">
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <Building2 className="h-5 w-5 text-primary" />
-              </div>
-              <h3 className="text-lg font-bold tracking-tight">Business Profile</h3>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="businessName" className={cn(fieldErrors.businessName && "text-destructive")}>Business Name</Label>
-                <Input
-                  id="businessName"
-                  name="businessName"
-                  value={formData.businessName}
-                  onChange={handleChange}
-                  error={!!fieldErrors.businessName}
-                  disabled={isSubmitting}
-                  placeholder="Acme Solutions"
-                  className="h-11 bg-background"
-                />
-                {fieldErrors.businessName && (
-                  <p className="text-[11px] font-medium text-destructive mt-1 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" /> {fieldErrors.businessName}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="industry" className={cn(fieldErrors.industryId && "text-destructive")}>Select Industry</Label>
-                <Select onValueChange={handleSelectChange} value={formData.industryId} disabled={isSubmitting || loadingIndustries}>
-                  <SelectTrigger className={cn("h-11 bg-background", fieldErrors.industryId && "border-destructive")}>
-                    <SelectValue placeholder={loadingIndustries ? "Loading..." : "Select Industry"} />
-                  </SelectTrigger>
-                  <SelectContent className="border-border max-h-[300px] overflow-y-auto">
-                    {industries.map((ind) => (
-                      <SelectItem key={ind.id} value={ind.id.toString()}>{ind.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {fieldErrors.industryId && (
-                  <p className="text-[11px] font-medium text-destructive mt-1 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" /> {fieldErrors.industryId}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="companyEmail" className={cn(fieldErrors.companyEmail && "text-destructive")}>Company Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    id="companyEmail"
-                    name="companyEmail"
-                    type="email"
-                    value={formData.companyEmail}
-                    onChange={handleChange}
-                    error={!!fieldErrors.companyEmail}
-                    disabled={isSubmitting}
-                    className="pl-10 h-11 bg-background"
-                    placeholder="hello@company.com"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="businessPhone" className={cn(fieldErrors.businessPhone && "text-destructive")}>Business Phone</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    id="businessPhone"
-                    name="businessPhone"
-                    type="tel"
-                    value={formData.businessPhone}
-                    onChange={handleChange}
-                    error={!!fieldErrors.businessPhone}
-                    disabled={isSubmitting || sameAsPersonal}
-                    className="pl-10 h-11 bg-background"
-                    placeholder="Business Contact"
-                  />
-                </div>
-                <div className="flex items-center space-x-2 mt-2">
-                  <Checkbox 
-                    id="sameAsPersonal" 
-                    checked={sameAsPersonal} 
-                    onCheckedChange={(checked) => handleCheckboxChange(checked as boolean)}
-                  />
-                  <label htmlFor="sameAsPersonal" className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    Same as personal phone
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Section 2: Personal Details */}
+          {/* Section 1: Owner Details */}
           <div className="space-y-5">
             <div className="flex items-center gap-3 border-b border-border/50 pb-3">
               <div className="bg-primary/10 p-2 rounded-lg">
@@ -316,32 +234,38 @@ const SignupForm: React.FC = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="adminEmail" className={cn(fieldErrors.adminEmail && "text-destructive")}>Personal Email</Label>
-                <Input
-                  id="adminEmail"
-                  name="adminEmail"
-                  type="email"
-                  value={formData.adminEmail}
-                  onChange={handleChange}
-                  error={!!fieldErrors.adminEmail}
-                  disabled={isSubmitting}
-                  className="h-11 bg-background"
-                  placeholder="john@example.com"
-                />
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="adminEmail"
+                    name="adminEmail"
+                    type="email"
+                    value={formData.adminEmail}
+                    onChange={handleChange}
+                    error={!!fieldErrors.adminEmail}
+                    disabled={isSubmitting}
+                    className="pl-10 h-11 bg-background"
+                    placeholder="john@example.com"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="phone" className={cn(fieldErrors.phone && "text-destructive")}>Personal Phone</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  error={!!fieldErrors.phone}
-                  disabled={isSubmitting}
-                  className="h-11 bg-background"
-                  placeholder="+880 1XXX XXXXXX"
-                />
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    error={!!fieldErrors.phone}
+                    disabled={isSubmitting}
+                    className="pl-10 h-11 bg-background"
+                    placeholder="+880 1XXX XXXXXX"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -405,6 +329,112 @@ const SignupForm: React.FC = () => {
                     <AlertCircle className="h-3 w-3" /> {fieldErrors.confirmPassword}
                   </p>
                 )}
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Business Profile */}
+          <div className="space-y-5 pt-4">
+            <div className="flex items-center gap-3 border-b border-border/50 pb-3">
+              <div className="bg-primary/10 p-2 rounded-lg">
+                <Building2 className="h-5 w-5 text-primary" />
+              </div>
+              <h3 className="text-lg font-bold tracking-tight">Business Profile</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="businessName" className={cn(fieldErrors.businessName && "text-destructive")}>Business Name</Label>
+                <Input
+                  id="businessName"
+                  name="businessName"
+                  value={formData.businessName}
+                  onChange={handleChange}
+                  error={!!fieldErrors.businessName}
+                  disabled={isSubmitting}
+                  placeholder="Acme Solutions"
+                  className="h-11 bg-background"
+                />
+                {fieldErrors.businessName && (
+                  <p className="text-[11px] font-medium text-destructive mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {fieldErrors.businessName}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="industry" className={cn(fieldErrors.industryId && "text-destructive")}>Select Industry</Label>
+                <Select onValueChange={handleSelectChange} value={formData.industryId} disabled={isSubmitting || loadingIndustries}>
+                  <SelectTrigger className={cn("h-11 bg-background", fieldErrors.industryId && "border-destructive")}>
+                    <SelectValue placeholder={loadingIndustries ? "Loading..." : "Select Industry"} />
+                  </SelectTrigger>
+                  <SelectContent className="border-border max-h-[300px] overflow-y-auto">
+                    {industries.map((ind) => (
+                      <SelectItem key={ind.id} value={ind.id.toString()}>{ind.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {fieldErrors.industryId && (
+                  <p className="text-[11px] font-medium text-destructive mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {fieldErrors.industryId}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="companyEmail" className={cn(fieldErrors.companyEmail && "text-destructive")}>Company Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="companyEmail"
+                    name="companyEmail"
+                    type="email"
+                    value={formData.companyEmail}
+                    onChange={handleChange}
+                    error={!!fieldErrors.companyEmail}
+                    disabled={isSubmitting || emailSameAsPersonal}
+                    className="pl-10 h-11 bg-background"
+                    placeholder="hello@company.com"
+                  />
+                </div>
+                <div className="flex items-center space-x-2 mt-2">
+                  <Checkbox 
+                    id="emailSameAsPersonal" 
+                    checked={emailSameAsPersonal} 
+                    onCheckedChange={(checked) => handleEmailCheckboxChange(checked as boolean)}
+                  />
+                  <label htmlFor="emailSameAsPersonal" className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Same as personal email
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="businessPhone" className={cn(fieldErrors.businessPhone && "text-destructive")}>Business Phone</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="businessPhone"
+                    name="businessPhone"
+                    type="tel"
+                    value={formData.businessPhone}
+                    onChange={handleChange}
+                    error={!!fieldErrors.businessPhone}
+                    disabled={isSubmitting || phoneSameAsPersonal}
+                    className="pl-10 h-11 bg-background"
+                    placeholder="Business Contact"
+                  />
+                </div>
+                <div className="flex items-center space-x-2 mt-2">
+                  <Checkbox 
+                    id="sameAsPersonal" 
+                    checked={phoneSameAsPersonal} 
+                    onCheckedChange={(checked) => handlePhoneCheckboxChange(checked as boolean)}
+                  />
+                  <label htmlFor="sameAsPersonal" className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Same as personal phone
+                  </label>
+                </div>
               </div>
             </div>
           </div>

@@ -12,11 +12,13 @@ export class TenantsController {
   @Get()
   findAll(
     @Query('limit') limit?: string,
-    @Query('cursor') cursor?: string
+    @Query('cursor') cursor?: string,
+    @Query('search') search?: string
   ) {
     return this.tenantsService.findAll(
       limit ? Number(limit) : 10,
-      cursor ? Number(cursor) : undefined
+      cursor ? Number(cursor) : undefined,
+      search
     );
   }
 

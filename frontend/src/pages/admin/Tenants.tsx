@@ -1,30 +1,44 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MainLayout } from '@/shared/components/layout/MainLayout';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { fetchTenants, resetTenantsState } from '@/core/tenants/slice/tenantsSlice';
+import { fetchTenants, resetTenantsState, setSearchQuery } from '@/core/tenants/slice/tenantsSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Badge } from '@/shared/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 import { Button } from '@/shared/ui/button';
-import { Edit, Trash2, Eye, Building2, Calendar } from 'lucide-react';
+import { Edit, Trash2, Eye, Building2, Calendar, Search } from 'lucide-react';
 import { TableSkeleton } from '@/shared/components/skeletons/TableSkeleton';
 import { InfiniteScroll } from '@/shared/components/common/InfiniteScroll';
+import { useDebounce } from '@/shared/hooks/useDebounce';
+import { Input } from '@/shared/ui/input';
 import { format } from 'date-fns';
 
 const TenantsPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { tenants, loading, error, hasMore, nextCursor } = useAppSelector((state) => state.tenants);
+  const { tenants, loading, error, hasMore, nextCursor, searchQuery } = useAppSelector((state) => state.tenants);
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  // Initial fetch and unmount cleanup
   useEffect(() => {
-    dispatch(fetchTenants());
+    dispatch(fetchTenants({}));
     return () => {
       dispatch(resetTenantsState());
     };
   }, [dispatch]);
 
+  // Handle search changes
+  useEffect(() => {
+    if (debouncedSearchTerm !== searchQuery) {
+      dispatch(setSearchQuery(debouncedSearchTerm));
+      dispatch(fetchTenants({ search: debouncedSearchTerm }));
+    }
+  }, [debouncedSearchTerm, searchQuery, dispatch]);
+
   const handleLoadMore = () => {
     if (nextCursor && !loading) {
-      dispatch(fetchTenants(nextCursor));
+      dispatch(fetchTenants({ cursor: nextCursor, search: searchQuery }));
     }
   };
 
@@ -35,8 +49,17 @@ const TenantsPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-foreground">Business Workspaces</h1>
           <p className="text-muted-foreground">Manage and monitor all tenant registrations and active businesses.</p>
         </div>
-        <div className="flex gap-3">
-          <Button className="gap-2 bg-primary shadow-none h-11">
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search tenants, owners..." 
+              className="pl-9 bg-card shadow-none border-border h-11"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Button className="gap-2 bg-primary shadow-none h-11 w-full sm:w-auto">
             <Building2 className="h-4 w-4" /> Export Report
           </Button>
         </div>
@@ -54,22 +77,24 @@ const TenantsPage: React.FC = () => {
         <CardContent className="p-0">
           {loading && tenants.length === 0 ? (
             <div className="p-6">
-              <TableSkeleton />
+              <TableSkeleton hideHeader />
             </div>
           ) : error ? (
             <div className="p-8 text-center">
               <p className="text-destructive font-medium">{error}</p>
-              <Button variant="outline" className="mt-4" onClick={() => dispatch(fetchTenants())}>
+              <Button variant="outline" className="mt-4" onClick={() => dispatch(fetchTenants({}))}>
                 Try Again
               </Button>
             </div>
           ) : tenants.length === 0 ? (
             <div className="p-12 text-center">
               <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                <Building2 className="h-8 w-8 text-muted-foreground" />
+                <Search className="h-8 w-8 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-bold">No tenants found</h3>
-              <p className="text-muted-foreground">There are currently no registered business workspaces in the system.</p>
+              <p className="text-muted-foreground">
+                {searchQuery ? `No results found for "${searchQuery}"` : 'There are currently no registered business workspaces in the system.'}
+              </p>
             </div>
           ) : (
             <InfiniteScroll

@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from '@/shared/lib/axios';
 import { TenantsState } from '../types/tenants.types';
 
@@ -10,14 +10,15 @@ const initialState: TenantsState = {
   stats: null,
   nextCursor: null,
   hasMore: true,
+  searchQuery: '',
 };
 
 export const fetchTenants = createAsyncThunk(
   'tenants/fetchAll',
-  async (cursor: number | undefined, { rejectWithValue }) => {
+  async ({ cursor, search }: { cursor?: number; search?: string } = {}, { rejectWithValue }) => {
     try {
       const response = await axios.get('/admin/tenants', {
-        params: { limit: 12, cursor }
+        params: { limit: 12, cursor, search }
       });
       return response.data.data; // { data, nextCursor }
     } catch (error: any) {
@@ -61,6 +62,13 @@ const tenantsSlice = createSlice({
       state.tenants = [];
       state.nextCursor = null;
       state.hasMore = true;
+      state.searchQuery = '';
+    },
+    setSearchQuery: (state, action: PayloadAction<string>) => {
+      state.searchQuery = action.payload;
+      state.tenants = [];
+      state.nextCursor = null;
+      state.hasMore = true;
     }
   },
   extraReducers: (builder) => {
@@ -99,5 +107,5 @@ const tenantsSlice = createSlice({
   },
 });
 
-export const { clearTenantError, resetTenantsState } = tenantsSlice.actions;
+export const { clearTenantError, resetTenantsState, setSearchQuery } = tenantsSlice.actions;
 export default tenantsSlice.reducer;
