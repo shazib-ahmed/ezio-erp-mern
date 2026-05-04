@@ -5,7 +5,8 @@ import {
   Body, 
   Patch, 
   Param, 
-  Delete 
+  Delete,
+  Query 
 } from '@nestjs/common';
 import { IndustryService } from './industry.service';
 import { CreateIndustryDto } from './dto/create-industry.dto';
@@ -25,8 +26,14 @@ export class IndustryController {
 
   @Get()
   @Public()
-  findAll() {
-    return this.industryService.findAll();
+  findAll(
+    @Query('limit') limit?: string,
+    @Query('cursor') cursor?: string
+  ) {
+    return this.industryService.findAll(
+      limit ? Number(limit) : 10,
+      cursor ? Number(cursor) : undefined
+    );
   }
 
   @Get(':id')

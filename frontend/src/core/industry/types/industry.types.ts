@@ -20,4 +20,6 @@ export interface IndustryState {
   loading: boolean;
   isSubmitting: boolean;
   error: string | null;
+  nextCursor: number | null;
+  hasMore: boolean;
 }

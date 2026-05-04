@@ -8,14 +8,18 @@ const initialState: TenantsState = {
   loading: false,
   error: null,
   stats: null,
+  nextCursor: null,
+  hasMore: true,
 };
 
 export const fetchTenants = createAsyncThunk(
   'tenants/fetchAll',
-  async (_, { rejectWithValue }) => {
+  async (cursor: number | undefined, { rejectWithValue }) => {
     try {
-      const response = await axios.get('/admin/tenants');
-      return response.data.data;
+      const response = await axios.get('/admin/tenants', {
+        params: { limit: 12, cursor }
+      });
+      return response.data; // { data, nextCursor }
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch tenants');
     }
@@ -52,6 +56,11 @@ const tenantsSlice = createSlice({
   reducers: {
     clearTenantError: (state) => {
       state.error = null;
+    },
+    resetTenantsState: (state) => {
+      state.tenants = [];
+      state.nextCursor = null;
+      state.hasMore = true;
     }
   },
   extraReducers: (builder) => {
@@ -62,7 +71,18 @@ const tenantsSlice = createSlice({
       })
       .addCase(fetchTenants.fulfilled, (state, action) => {
         state.loading = false;
-        state.tenants = action.payload;
+        const { data, nextCursor } = action.payload;
+        
+        if (state.nextCursor === null) {
+          state.tenants = data;
+        } else {
+          const existingIds = new Set(state.tenants.map(t => t.id));
+          const newItems = data.filter((t: any) => !existingIds.has(t.id));
+          state.tenants = [...state.tenants, ...newItems];
+        }
+        
+        state.nextCursor = nextCursor;
+        state.hasMore = !!nextCursor;
       })
       .addCase(fetchTenants.rejected, (state, action) => {
         state.loading = false;
@@ -79,5 +99,5 @@ const tenantsSlice = createSlice({
   },
 });
 
-export const { clearTenantError } = tenantsSlice.actions;
+export const { clearTenantError, resetTenantsState } = tenantsSlice.actions;
 export default tenantsSlice.reducer;

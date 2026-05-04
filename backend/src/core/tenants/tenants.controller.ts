@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { TenantsService } from './tenants.service';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { RolesGuard } from '@/common/guards/roles.guard';
@@ -8,10 +8,16 @@ import { RolesGuard } from '@/common/guards/roles.guard';
 @Roles('SUPER_ADMIN')
 export class TenantsController {
   constructor(private readonly tenantsService: TenantsService) {}
-
+  
   @Get()
-  findAll() {
-    return this.tenantsService.findAll();
+  findAll(
+    @Query('limit') limit?: string,
+    @Query('cursor') cursor?: string
+  ) {
+    return this.tenantsService.findAll(
+      limit ? Number(limit) : 10,
+      cursor ? Number(cursor) : undefined
+    );
   }
 
   @Get('stats')

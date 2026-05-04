@@ -7,14 +7,18 @@ const initialState: IndustryState = {
   loading: false,
   isSubmitting: false,
   error: null,
+  nextCursor: null,
+  hasMore: true,
 };
 
 export const fetchIndustries = createAsyncThunk(
   'industry/fetchIndustries',
-  async (_, { rejectWithValue }) => {
+  async (cursor: number | undefined, { rejectWithValue }) => {
     try {
-      const response = await axios.get('/industries');
-      return response.data.data;
+      const response = await axios.get('/industries', {
+        params: { limit: 12, cursor }
+      });
+      return response.data; // { data, nextCursor }
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch industries');
     }
@@ -60,7 +64,13 @@ export const deleteIndustry = createAsyncThunk(
 const industrySlice = createSlice({
   name: 'industry',
   initialState,
-  reducers: {},
+  reducers: {
+    resetIndustryState: (state) => {
+      state.industries = [];
+      state.nextCursor = null;
+      state.hasMore = true;
+    }
+  },
   extraReducers: (builder) => {
     builder
       // Fetch
@@ -68,9 +78,20 @@ const industrySlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchIndustries.fulfilled, (state, action: PayloadAction<Industry[]>) => {
+      .addCase(fetchIndustries.fulfilled, (state, action: PayloadAction<{ data: Industry[]; nextCursor: number | null }>) => {
         state.loading = false;
-        state.industries = action.payload;
+        const { data, nextCursor } = action.payload;
+        
+        if (state.nextCursor === null) {
+          state.industries = data;
+        } else {
+          const existingIds = new Set(state.industries.map(i => i.id));
+          const newItems = data.filter((i: Industry) => !existingIds.has(i.id));
+          state.industries = [...state.industries, ...newItems];
+        }
+        
+        state.nextCursor = nextCursor;
+        state.hasMore = !!nextCursor;
       })
       .addCase(fetchIndustries.rejected, (state, action) => {
         state.loading = false;
@@ -115,4 +136,5 @@ const industrySlice = createSlice({
   },
 });
 
+export const { resetIndustryState } = industrySlice.actions;
 export default industrySlice.reducer;

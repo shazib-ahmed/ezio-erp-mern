@@ -35,4 +35,6 @@ export interface TenantsState {
     totalTenants: number;
     totalIndustries: number;
   } | null;
+  nextCursor: number | null;
+  hasMore: boolean;
 }

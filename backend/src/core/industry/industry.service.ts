@@ -33,8 +33,12 @@ export class IndustryService implements IIndustryService {
     });
   }
 
-  async findAll(): Promise<Industry[]> {
-    return this.prisma.industry.findMany({
+  async findAll(limit: number = 10, cursor?: number): Promise<{ data: Industry[]; nextCursor: number | null }> {
+    const industries = await this.prisma.industry.findMany({
+      take: limit + 1,
+      cursor: cursor ? { id: cursor } : undefined,
+      skip: cursor ? 1 : 0,
+      orderBy: { id: 'asc' },
       include: {
         modules: true,
         _count: {
@@ -42,6 +46,17 @@ export class IndustryService implements IIndustryService {
         }
       }
     });
+
+    let nextCursor: number | null = null;
+    if (industries.length > limit) {
+      const nextItem = industries.pop();
+      nextCursor = nextItem.id;
+    }
+
+    return {
+      data: industries,
+      nextCursor
+    };
   }
 
   async findOne(id: number): Promise<Industry> {

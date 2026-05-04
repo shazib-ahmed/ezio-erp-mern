@@ -5,8 +5,11 @@ import { PrismaService } from '@/shared/prisma/prisma.service';
 export class TenantsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll() {
-    return this.prisma.tenant.findMany({
+  async findAll(limit: number = 10, cursor?: number) {
+    const tenants = await this.prisma.tenant.findMany({
+      take: limit + 1,
+      cursor: cursor ? { id: cursor } : undefined,
+      skip: cursor ? 1 : 0,
       include: {
         industry: true,
         users: {
@@ -17,9 +20,20 @@ export class TenantsService {
         activeModules: true,
       },
       orderBy: {
-        createdAt: 'desc',
+        id: 'asc',
       },
     });
+
+    let nextCursor: number | null = null;
+    if (tenants.length > limit) {
+      const nextItem = tenants.pop();
+      nextCursor = nextItem.id;
+    }
+
+    return {
+      data: tenants,
+      nextCursor
+    };
   }
 
   async findOne(id: number) {
