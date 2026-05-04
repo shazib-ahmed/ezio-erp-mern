@@ -18,5 +18,6 @@ export interface Industry {
 export interface IndustryState {
   industries: Industry[];
   loading: boolean;
+  isSubmitting: boolean;
   error: string | null;
 }

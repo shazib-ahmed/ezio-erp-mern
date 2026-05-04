@@ -5,6 +5,7 @@ import { Industry, IndustryState } from '../types/industry.types';
 const initialState: IndustryState = {
   industries: [],
   loading: false,
+  isSubmitting: false,
   error: null,
 };
 
@@ -76,19 +77,40 @@ const industrySlice = createSlice({
         state.error = action.payload as string;
       })
       // Create
+      .addCase(createIndustry.pending, (state) => {
+        state.isSubmitting = true;
+      })
       .addCase(createIndustry.fulfilled, (state, action: PayloadAction<Industry>) => {
+        state.isSubmitting = false;
         state.industries.push(action.payload);
       })
+      .addCase(createIndustry.rejected, (state) => {
+        state.isSubmitting = false;
+      })
       // Update
+      .addCase(updateIndustry.pending, (state) => {
+        state.isSubmitting = true;
+      })
       .addCase(updateIndustry.fulfilled, (state, action: PayloadAction<Industry>) => {
+        state.isSubmitting = false;
         const index = state.industries.findIndex(i => i.id === action.payload.id);
         if (index !== -1) {
           state.industries[index] = action.payload;
         }
       })
+      .addCase(updateIndustry.rejected, (state) => {
+        state.isSubmitting = false;
+      })
       // Delete
+      .addCase(deleteIndustry.pending, (state) => {
+        state.isSubmitting = true;
+      })
       .addCase(deleteIndustry.fulfilled, (state, action: PayloadAction<string>) => {
+        state.isSubmitting = false;
         state.industries = state.industries.filter(i => i.id !== action.payload);
+      })
+      .addCase(deleteIndustry.rejected, (state) => {
+        state.isSubmitting = false;
       });
   },
 });

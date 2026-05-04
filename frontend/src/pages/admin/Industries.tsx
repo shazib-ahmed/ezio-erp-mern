@@ -1,38 +1,76 @@
 import React, { useState } from 'react';
 import { MainLayout } from '@/shared/components/layout/MainLayout';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
-import { Badge } from '@/shared/ui/badge';
+import { Card, CardContent } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
-import { Plus, Tag, MoreVertical } from 'lucide-react';
+import { Plus, Tag, Edit, Trash2 } from 'lucide-react';
 import { IndustryFormModal } from '@/modules/admin/components/IndustryFormModal';
+import { DeleteConfirmationModal } from '@/shared/components/modals/DeleteConfirmationModal';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { fetchIndustries, createIndustry, deleteIndustry } from '@/core/industry/slice/industrySlice';
+import { fetchIndustries, createIndustry, deleteIndustry, updateIndustry } from '@/core/industry/slice/industrySlice';
 import { TableSkeleton } from '@/shared/components/skeletons/TableSkeleton';
 import { Industry } from '@/core/industry/types/industry.types';
+import { toast } from 'sonner';
 
 const Industries: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { industries, loading } = useAppSelector((state) => state.industry);
+  const { industries, loading, isSubmitting } = useAppSelector((state) => state.industry);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingIndustry, setEditingIndustry] = useState<Industry | null>(null);
+  
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [industryToDelete, setIndustryToDelete] = useState<Industry | null>(null);
 
   React.useEffect(() => {
     dispatch(fetchIndustries());
   }, [dispatch]);
 
-  const handleAddIndustry = async (data: any) => {
-    await dispatch(createIndustry(data));
+  const handleOpenModal = (industry: Industry | null = null) => {
+    setEditingIndustry(industry);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setEditingIndustry(null);
     setIsModalOpen(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this industry?')) {
-      await dispatch(deleteIndustry(id));
+  const handleSubmit = async (data: any) => {
+    try {
+      if (editingIndustry) {
+        const result = await dispatch(updateIndustry({ id: editingIndustry.id, data })).unwrap();
+        toast.success(`Industry "${result.name}" updated successfully`);
+      } else {
+        const result = await dispatch(createIndustry(data)).unwrap();
+        toast.success(`Industry "${result.name}" created successfully`);
+      }
+      handleCloseModal();
+    } catch (error: any) {
+      toast.error(error || 'Something went wrong');
+    }
+  };
+
+  const handleDeleteClick = (industry: Industry) => {
+    setIndustryToDelete(industry);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!industryToDelete) return;
+    try {
+      await dispatch(deleteIndustry(industryToDelete.id)).unwrap();
+      toast.success(`Industry "${industryToDelete.name}" deleted successfully`);
+      setIsDeleteModalOpen(false);
+      setIndustryToDelete(null);
+    } catch (error: any) {
+      toast.error(error || 'Failed to delete industry');
     }
   };
 
   if (loading && industries.length === 0) return (
     <MainLayout>
-      <TableSkeleton />
+      <div className="p-8">
+        <TableSkeleton />
+      </div>
     </MainLayout>
   );
 
@@ -43,74 +81,84 @@ const Industries: React.FC = () => {
           <h1 className="text-3xl font-bold text-foreground">Industries</h1>
           <p className="text-muted-foreground">Manage business categories and industry-specific defaults.</p>
         </div>
-        <Button className="gap-2" onClick={() => setIsModalOpen(true)}>
+        <Button className="gap-2 bg-primary shadow-none h-11" onClick={() => handleOpenModal()}>
           <Plus className="h-4 w-4" /> Add Industry
         </Button>
       </div>
 
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead className="font-bold py-4 pl-6">Industry Name</TableHead>
-              <TableHead className="font-bold">Slug</TableHead>
-              <TableHead className="font-bold text-center">Tenants</TableHead>
-              <TableHead className="font-bold">Status</TableHead>
-              <TableHead className="text-right font-bold pr-6">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {industries.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
-                  <div className="flex flex-col items-center gap-2">
-                    <Tag className="h-8 w-8 opacity-20" />
-                    <p>No industries found. Click "Add Industry" to create one.</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {industries.length === 0 ? (
+          <div className="col-span-full py-20 flex flex-col items-center justify-center bg-card border border-border rounded-2xl border-dashed">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+              <Tag className="h-8 w-8 text-muted-foreground opacity-20" />
+            </div>
+            <h3 className="text-lg font-bold">No industries found</h3>
+            <p className="text-muted-foreground">Click "Add Industry" to create your first business sector.</p>
+          </div>
+        ) : (
+          industries.map((ind: Industry) => (
+            <Card key={ind.id} className="border-border bg-card shadow-none transition-all duration-300 group overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center border border-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                    <Tag className="h-6 w-6" />
                   </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              industries.map((ind: Industry) => (
-                <TableRow key={ind.id} className="hover:bg-muted/30 transition-colors">
-                  <TableCell className="pl-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center border border-primary/10 text-primary">
-                        <Tag className="h-4 w-4" />
-                      </div>
-                      <span className="font-bold text-foreground">{ind.name}</span>
+                  <div className="flex items-center gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5" 
+                      onClick={() => handleOpenModal(ind)}
+                      disabled={isSubmitting}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5" 
+                      onClick={() => handleDeleteClick(ind)}
+                      disabled={isSubmitting}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">{ind.name}</h3>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-border">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Registered Tenants</span>
+                      <span className="text-xl font-black text-foreground">{ind._count?.tenants || 0}</span>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <code className="text-[10px] bg-muted px-2 py-1 rounded font-mono border border-border">
-                      {ind.name.toLowerCase().replace(/\s+/g, '-')}
-                    </code>
-                  </TableCell>
-                  <TableCell className="text-center font-bold text-foreground">
-                    {ind._count?.tenants || 0}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="font-bold bg-emerald-500/5 border-emerald-500/20 text-emerald-500">
-                      Active
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right pr-6">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/5 hover:text-destructive" onClick={() => handleDelete(ind.id)}>
-                        <MoreVertical className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       <IndustryFormModal 
         isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onSubmit={handleAddIndustry}
+        onClose={handleCloseModal} 
+        onSubmit={handleSubmit}
+        initialData={editingIndustry}
+        isSubmitting={isSubmitting}
+      />
+
+      <DeleteConfirmationModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isSubmitting}
+        itemName={industryToDelete?.name}
+        title="Delete Industry"
+        description="Are you sure you want to delete this industry? This will affect all businesses registered under this category."
       />
     </MainLayout>
   );

@@ -4,12 +4,11 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogDescription, 
   DialogFooter,
-  DialogClose
+  DialogDescription
 } from '@/shared/ui/dialog';
 import { Button } from '@/shared/ui/button';
-import { AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;
@@ -17,45 +16,65 @@ interface DeleteConfirmationModalProps {
   onConfirm: () => void;
   title?: string;
   description?: string;
-  loading?: boolean;
+  isDeleting?: boolean;
+  itemName?: string;
 }
 
-const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
+export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
   isOpen,
   onClose,
   onConfirm,
-  title = "Are you absolutely sure?",
-  description = "This action cannot be undone. This will permanently delete the record from our servers.",
-  loading = false
+  title = "Delete Confirmation",
+  description = "Are you sure you want to delete this item? This action cannot be undone.",
+  isDeleting = false,
+  itemName
 }) => {
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 mb-4">
-            <AlertTriangle className="h-6 w-6 text-destructive" />
+    <Dialog open={isOpen} onOpenChange={(open) => !isDeleting && !open && onClose()}>
+      <DialogContent className="md:max-w-[400px]">
+        <DialogHeader className="flex flex-col items-center gap-3 pt-4">
+          <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-2">
+            <AlertTriangle className="h-6 w-6" />
           </div>
-          <DialogTitle className="text-center">{title}</DialogTitle>
-          <DialogDescription className="text-center">
+          <DialogTitle className="text-xl font-bold text-center">{title}</DialogTitle>
+          <DialogDescription className="text-center text-muted-foreground">
             {description}
+            {itemName && (
+              <span className="block mt-2 font-bold text-foreground">
+                "{itemName}"
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="gap-2 sm:gap-0">
-          <DialogClose asChild>
-            <Button variant="outline" className="flex-1">Cancel</Button>
-          </DialogClose>
+        
+        <DialogFooter className="flex-row gap-3 pt-4">
           <Button 
-            variant="destructive" 
-            className="flex-1" 
-            onClick={onConfirm}
-            disabled={loading}
+            type="button" 
+            variant="outline" 
+            className="flex-1 h-11" 
+            onClick={onClose}
+            disabled={isDeleting}
           >
-            {loading ? "Deleting..." : "Delete"}
+            Cancel
+          </Button>
+          <Button 
+            type="button" 
+            variant="destructive" 
+            className="flex-1 h-11 font-bold" 
+            onClick={onConfirm}
+            disabled={isDeleting}
+          >
+            {isDeleting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Deleting...
+              </>
+            ) : (
+              "Delete"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
-
-export { DeleteConfirmationModal };
