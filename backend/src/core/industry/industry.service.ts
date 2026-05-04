@@ -6,7 +6,7 @@ import { Industry } from '@prisma/client';
 
 export interface IIndustryService {
   create(createIndustryDto: CreateIndustryDto): Promise<Industry>;
-  findAll(): Promise<Industry[]>;
+  findAll(limit?: number, cursor?: number): Promise<{ data: Industry[]; nextCursor: number | null }>;
   findOne(id: number): Promise<Industry>;
   update(id: number, updateIndustryDto: UpdateIndustryDto): Promise<Industry>;
   remove(id: number): Promise<Industry>;
@@ -37,7 +37,6 @@ export class IndustryService implements IIndustryService {
     const industries = await this.prisma.industry.findMany({
       take: limit + 1,
       cursor: cursor ? { id: cursor } : undefined,
-      skip: cursor ? 1 : 0,
       orderBy: { id: 'asc' },
       include: {
         modules: true,
@@ -50,7 +49,9 @@ export class IndustryService implements IIndustryService {
     let nextCursor: number | null = null;
     if (industries.length > limit) {
       const nextItem = industries.pop();
-      nextCursor = nextItem.id;
+      if (nextItem) {
+        nextCursor = nextItem.id;
+      }
     }
 
     return {

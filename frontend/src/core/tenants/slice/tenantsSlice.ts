@@ -19,7 +19,7 @@ export const fetchTenants = createAsyncThunk(
       const response = await axios.get('/admin/tenants', {
         params: { limit: 12, cursor }
       });
-      return response.data; // { data, nextCursor }
+      return response.data.data; // { data, nextCursor }
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch tenants');
     }

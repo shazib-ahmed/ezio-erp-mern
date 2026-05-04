@@ -9,7 +9,6 @@ export class TenantsService {
     const tenants = await this.prisma.tenant.findMany({
       take: limit + 1,
       cursor: cursor ? { id: cursor } : undefined,
-      skip: cursor ? 1 : 0,
       include: {
         industry: true,
         users: {
@@ -27,7 +26,9 @@ export class TenantsService {
     let nextCursor: number | null = null;
     if (tenants.length > limit) {
       const nextItem = tenants.pop();
-      nextCursor = nextItem.id;
+      if (nextItem) {
+        nextCursor = nextItem.id;
+      }
     }
 
     return {
