@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { MainLayout } from '@/shared/components/layout/MainLayout';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
 import { Button } from '@/shared/ui/button';
@@ -42,7 +41,7 @@ const POS: React.FC = () => {
   const total = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
 
   return (
-    <MainLayout>
+    <>
       <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-180px)]">
         {/* Left: Product Selection */}
         <div className="flex-1 flex flex-col gap-4">
@@ -143,7 +142,7 @@ const POS: React.FC = () => {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </>
   );
 };
 

@@ -108,6 +108,27 @@ export const logoutUser = createAsyncThunk(
   }
 );
 
+export const updateProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async (formData: FormData, { rejectWithValue }) => {
+    try {
+      const response = await axios.patch('/account/profile', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      const user = response.data.data;
+      
+      // Update secure storage
+      await saveSecureData('auth_user', user);
+      
+      return user;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Profile update failed');
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -197,6 +218,18 @@ const authSlice = createSlice({
         removeSecureData('auth_user');
         removeSecureData('auth_accessToken');
         removeSecureData('auth_refreshToken');
+      })
+      .addCase(updateProfile.pending, (state) => {
+        state.isSubmitting = true;
+        state.error = null;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.isSubmitting = false;
+        state.user = action.payload;
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.isSubmitting = false;
+        state.error = action.payload as string;
       });
   },
 });

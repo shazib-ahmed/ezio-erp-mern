@@ -1,5 +1,4 @@
 import React from 'react';
-import { MainLayout } from '@/shared/components/layout/MainLayout';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
@@ -7,7 +6,7 @@ import { RotateCcw } from 'lucide-react';
 
 const Returns: React.FC = () => {
   return (
-    <MainLayout>
+    <>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Returns & Refunds</h1>
@@ -51,7 +50,7 @@ const Returns: React.FC = () => {
           </TableBody>
         </Table>
       </div>
-    </MainLayout>
+    </>
   );
 };
 

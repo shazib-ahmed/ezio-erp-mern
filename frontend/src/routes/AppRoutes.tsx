@@ -101,7 +101,55 @@ const AppRoutes: React.FC = () => {
           <Route index element={<Navigate to="/sales/orders" replace />} />
           <Route path="quotations" element={<PermissionGuard moduleCode="MOD_SALES" permissions={['SALE_VIEW']}><Suspense fallback={<TableSkeleton />}><Quotations /></Suspense></PermissionGuard>} />
           <Route path="orders" element={<PermissionGuard moduleCode="MOD_SALES" permissions={['SALE_VIEW']}><Suspense fallback={<TableSkeleton />}><Orders /></Suspense></PermissionGuard>} />
-          <Route path="pos" element={<PermissionGuard moduleCode="MOD_SALES" permissions={['SALE_CREATE']}><Suspense fallback={<TableSkeleton />}><POS /></Suspense></PermissionGuard>} />
+          <Route path="pos" element={
+            <PermissionGuard moduleCode="MOD_SALES" permissions={['SALE_CREATE']}>
+              <Suspense fallback={
+                <div className="animate-in fade-in duration-500 h-[calc(100vh-180px)] flex flex-col lg:flex-row gap-6">
+                  {/* Left Skeleton */}
+                  <div className="flex-1 flex flex-col gap-4">
+                    <div className="flex gap-4">
+                      <Skeleton className="h-10 flex-1 bg-muted/50 rounded-lg" />
+                      <Skeleton className="h-10 w-40 bg-muted/50 rounded-lg" />
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {[...Array(8)].map((_, i) => (
+                        <div key={i} className="h-32 rounded-xl border border-border/50 bg-card/50 p-4 flex flex-col items-center gap-2">
+                          <Skeleton className="h-10 w-10 rounded-xl bg-muted/50" />
+                          <Skeleton className="h-4 w-20 bg-muted/50" />
+                          <Skeleton className="h-3 w-12 bg-muted/50" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Right Sidebar Skeleton */}
+                  <div className="w-full lg:w-96 flex flex-col gap-6 bg-card border border-border rounded-xl p-6">
+                    <div className="flex justify-between items-center pb-4 border-b border-border">
+                      <Skeleton className="h-6 w-32 bg-muted/50" />
+                      <Skeleton className="h-6 w-12 bg-muted/50" />
+                    </div>
+                    <div className="flex-1 space-y-4">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="flex gap-3 bg-muted/20 p-2 rounded-lg border border-border/50">
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-24 bg-muted/50" />
+                            <Skeleton className="h-3 w-16 bg-muted/50" />
+                          </div>
+                          <Skeleton className="h-8 w-16 bg-muted/50" />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="border-t border-border pt-4 space-y-3">
+                      <div className="flex justify-between"><Skeleton className="h-4 w-20 bg-muted/50" /><Skeleton className="h-4 w-12 bg-muted/50" /></div>
+                      <div className="flex justify-between"><Skeleton className="h-6 w-24 bg-muted/50" /><Skeleton className="h-6 w-16 bg-muted/50" /></div>
+                      <Skeleton className="h-14 w-full bg-primary/20 rounded-lg" />
+                    </div>
+                  </div>
+                </div>
+              }>
+                <POS />
+              </Suspense>
+            </PermissionGuard>
+          } />
           <Route path="customers" element={<PermissionGuard moduleCode="MOD_SALES" permissions={['CUSTOMER_VIEW']}><Suspense fallback={<TableSkeleton />}><Customers /></Suspense></PermissionGuard>} />
           <Route path="returns" element={<PermissionGuard moduleCode="MOD_SALES" permissions={['SALE_VIEW']}><Suspense fallback={<TableSkeleton />}><Returns /></Suspense></PermissionGuard>} />
         </Route>
@@ -166,7 +214,39 @@ const AppRoutes: React.FC = () => {
         <Route 
           path="/settings" 
           element={
-            <Suspense fallback={<TableSkeleton />}>
+            <Suspense fallback={
+              <div className="animate-in fade-in duration-500">
+                <div className="mb-8 space-y-2">
+                  <Skeleton className="h-10 w-64 bg-muted/50" />
+                  <Skeleton className="h-4 w-96 bg-muted/50" />
+                </div>
+                
+                <div className="flex gap-2 mb-6">
+                  <Skeleton className="h-10 w-24 rounded-lg bg-muted/50" />
+                  <Skeleton className="h-10 w-28 rounded-lg bg-muted/50" />
+                </div>
+
+                <div className="max-w-4xl border border-border rounded-xl bg-card overflow-hidden">
+                  <div className="p-6 border-b border-border bg-muted/10 space-y-2">
+                    <Skeleton className="h-6 w-48 bg-muted/50" />
+                    <Skeleton className="h-4 w-80 bg-muted/50" />
+                  </div>
+                  <div className="p-6 space-y-8">
+                    <div className="flex flex-col md:flex-row items-start gap-8">
+                      <Skeleton className="w-32 h-32 rounded-2xl bg-muted/50" />
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                        {[...Array(4)].map((_, i) => (
+                          <div key={i} className="space-y-2">
+                            <Skeleton className="h-4 w-24 bg-muted/50" />
+                            <Skeleton className="h-10 w-full bg-muted/50" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }>
               <SettingsPage />
             </Suspense>
           } 

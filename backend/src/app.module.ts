@@ -7,11 +7,12 @@ import { IndustryModule } from './core/industry/industry.module';
 import { TenantsModule } from './core/tenants/tenants.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './core/auth/auth.module';
+import { AccountModule } from './core/account/account.module';
 import { JwtAuthGuard } from './core/auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '@/common/guards/permissions.guard';
 
 @Module({
-  imports: [PrismaModule, IndustryModule, AuthModule, TenantsModule],
+  imports: [PrismaModule, IndustryModule, AuthModule, TenantsModule, AccountModule],
   controllers: [AppController],
   providers: [
     AppService,

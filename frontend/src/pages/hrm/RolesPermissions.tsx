@@ -1,5 +1,5 @@
 import React from 'react';
-import { MainLayout } from '@/shared/components/layout/MainLayout';
+
 import { RoleList } from '@/modules/hrm/components/RoleList';
 import { RoleFormModal } from '@/modules/hrm/components/RoleFormModal';
 import { Button } from '@/shared/ui/button';
@@ -15,7 +15,7 @@ const RolesPermissions: React.FC = () => {
   };
 
   return (
-    <MainLayout>
+    <>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Roles & Permissions</h1>
@@ -46,7 +46,7 @@ const RolesPermissions: React.FC = () => {
         onClose={() => setIsModalOpen(false)} 
         onSubmit={handleCreateRole}
       />
-    </MainLayout>
+    </>
   );
 };
 
