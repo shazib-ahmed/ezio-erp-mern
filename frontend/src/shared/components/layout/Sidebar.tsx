@@ -113,9 +113,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const isSuperAdmin = user.roles?.some((r: any) => r.role.name === 'SUPER_ADMIN');
 
     return navItems.filter(item => {
-      // 1. Module Check (if item belongs to a specific module)
-      if (item.moduleCode && !isSuperAdmin) {
-        if (!activeModuleCodes.includes(item.moduleCode)) return false;
+      // 1. Role-based top-level filtering
+      if (isSuperAdmin) {
+        // Super Admin only sees System modules + Dashboard/Settings
+        const allowedPaths = ['/dashboard', '/settings', '/admin/tenants', '/admin/industries'];
+        if (!allowedPaths.includes(item.path)) return false;
+      } else {
+        // Tenants/Users see Business modules + Dashboard/Settings
+        const systemPaths = ['/admin/tenants', '/admin/industries'];
+        if (systemPaths.includes(item.path)) return false;
+
+        // Module Check for Tenants
+        if (item.moduleCode && !activeModuleCodes.includes(item.moduleCode)) return false;
       }
 
       // 2. Permission Check

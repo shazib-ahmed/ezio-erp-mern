@@ -13,7 +13,9 @@ import {
   Clock,
   Package,
   Users,
-  Wallet
+  Wallet,
+  Building2,
+  Tag
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -38,6 +40,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/shared/ui/select';
+import { useAppSelector } from '@/app/hooks';
 
 const trendData = [
   { name: '01 May', sales: 4000, expenses: 2400 },
@@ -56,13 +59,55 @@ const paymentData = [
 ];
 
 const Dashboard: React.FC = () => {
+  const { user } = useAppSelector((state) => state.auth);
+  const isSuperAdmin = user?.roles?.some((r: any) => r.role.name === 'SUPER_ADMIN');
+
+  if (isSuperAdmin) {
+    return (
+      <MainLayout>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground">System Overview</h1>
+          <p className="text-muted-foreground">Welcome back, {user?.name}. Here's the platform status.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <Card className="border-border bg-card shadow-none overflow-hidden group">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
+                  <Building2 className="h-5 w-5 text-primary" />
+                </div>
+                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10">Active</Badge>
+              </div>
+              <p className="text-sm font-medium text-muted-foreground mb-1">Total Tenants</p>
+              <h3 className="text-2xl font-bold text-foreground">12</h3>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border bg-card shadow-none overflow-hidden group">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+                  <Tag className="h-5 w-5 text-indigo-500" />
+                </div>
+                <Badge variant="outline" className="bg-indigo-500/5 text-indigo-500 border-indigo-500/10">System</Badge>
+              </div>
+              <p className="text-sm font-medium text-muted-foreground mb-1">Total Industries</p>
+              <h3 className="text-2xl font-bold text-foreground">27</h3>
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       {/* Header & Quick Actions */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Overview</h1>
-          <p className="text-muted-foreground">Welcome back, Shazib. Here's what's happening today.</p>
+          <p className="text-muted-foreground">Welcome back, {user?.name}. Here's what's happening today.</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button className="gap-2 bg-primary shadow-none h-11" size="sm">
@@ -72,7 +117,7 @@ const Dashboard: React.FC = () => {
             <Plus className="h-4 w-4" /> Add Expense
           </Button>
           <Button variant="outline" className="gap-2 border-border h-11" size="sm">
-            <Users className="h-4 w-4" /> Add Customer
+            <Plus className="h-4 w-4" /> Add Customer
           </Button>
           <Button variant="outline" className="gap-2 border-border h-11" size="sm">
             <Package className="h-4 w-4" /> Add Product
