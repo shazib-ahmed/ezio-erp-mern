@@ -55,7 +55,7 @@ export class AccountService {
       data: updateData,
       include: {
         roles: { include: { role: true } },
-        tenants: { include: { tenant: true } },
+        tenant: true,
       },
     });
 

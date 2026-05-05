@@ -38,6 +38,8 @@ const navItems: NavItem[] = [
     moduleCode: 'MOD_INVENTORY',
     permissions: ['PRODUCT_VIEW'],
     subItems: [
+      { label: 'Categories', path: '/inventory/categories', permissions: ['PRODUCT_VIEW'] },
+      { label: 'Brands', path: '/inventory/brands', permissions: ['PRODUCT_VIEW'] },
       { label: 'Products', path: '/inventory/products', permissions: ['PRODUCT_VIEW'] },
       { label: 'Stock Management', path: '/inventory/stock', permissions: ['STOCK_ADJUST'] },
     ]
@@ -111,6 +113,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const userPermissions = user.permissions || [];
     const activeModuleCodes = user.activeModules?.map((m: any) => m.code) || [];
     const isSuperAdmin = user.roles?.some((r: any) => r.role.name === 'SUPER_ADMIN');
+    
+    // Dynamic Industry Check for Brands
+    const industryAttributes = (user as any)?.industry?.attributes || [];
+    const hasBrandAttribute = industryAttributes.some((attr: any) => 
+      attr.name.toLowerCase() === 'brand'
+    );
 
     return navItems.filter(item => {
       // 1. Role-based top-level filtering
@@ -135,11 +143,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       return true;
     }).map(item => {
-      // 3. Sub-items Permission Check
+      // 3. Sub-items Permission Check & Dynamic Industry Filtering
       if (item.subItems) {
         return {
           ...item,
           subItems: item.subItems.filter(sub => {
+            // Special Check for Brands based on Industry Attributes
+            if (sub.label === 'Brands' && !hasBrandAttribute) return false;
+
             if (sub.permissions && sub.permissions.length > 0) {
               const hasPermission = sub.permissions.some(p => userPermissions.includes(p));
               if (!hasPermission && !isSuperAdmin) return false;
@@ -190,9 +201,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               </div>
               <div className="flex flex-col">
                 <span className="text-lg font-bold text-white leading-tight tracking-tight">Ezio-ERP</span>
-                {user?.tenants?.[0]?.tenant && (
+                {user?.tenant && (
                   <span className="text-[10px] text-gray-500 font-medium truncate max-w-[120px]">
-                    {user.tenants[0].tenant.name}
+                    {user.tenant.name}
                   </span>
                 )}
               </div>

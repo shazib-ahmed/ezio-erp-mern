@@ -214,9 +214,32 @@ async function main() {
   // 4. SEED INDUSTRIES & LINK MODULES
   const industriesData = [
     { name: 'Technology', description: 'System Administration and IT Services' },
-    { name: 'Garments & Textile', description: 'Style, Color, Size Matrix' },
-    { name: 'Pharmaceuticals', description: 'Medicine manufacturing and chemical processing' },
-    { name: 'Food & Beverage', description: 'Food processing and beverage production' },
+    { 
+      name: 'Garments & Textile', 
+      description: 'Style, Color, Size Matrix',
+      attributes: [
+        { name: 'Style', type: 'text', required: true },
+        { name: 'Color', type: 'text', required: false },
+        { name: 'Size', type: 'select', options: ['S', 'M', 'L', 'XL', 'XXL'], required: false }
+      ]
+    },
+    { 
+      name: 'Pharmaceuticals', 
+      description: 'Medicine manufacturing and chemical processing',
+      attributes: [
+        { name: 'Generic Name', type: 'text', required: true },
+        { name: 'Expiry Date', type: 'date', required: true },
+        { name: 'Strength', type: 'text', required: false }
+      ]
+    },
+    { 
+      name: 'Food & Beverage', 
+      description: 'Food processing and beverage production',
+      attributes: [
+        { name: 'Expiry Date', type: 'date', required: true },
+        { name: 'Batch No', type: 'text', required: false }
+      ]
+    },
     { name: 'Automobile', description: 'Vehicle parts and assembly' },
     { name: 'Electronics Manufacturing', description: 'Gagdet and electronics assembly' },
     { name: 'E-commerce', description: 'Online shops and digital marketplaces' },
@@ -226,7 +249,15 @@ async function main() {
     { name: 'FMCG Distribution', description: 'Fast Moving Consumer Goods distribution' },
     { name: 'Hospital & Clinic', description: 'Patient and Doctor management system' },
     { name: 'Diagnostic Center', description: 'Lab reports and diagnostic management' },
-    { name: 'Pharmacy Chain', description: 'Drug generic names and Expiry tracking' },
+    { 
+      name: 'Pharmacy Chain', 
+      description: 'Drug generic names and Expiry tracking',
+      attributes: [
+        { name: 'Generic Name', type: 'text', required: true },
+        { name: 'Expiry Date', type: 'date', required: true },
+        { name: 'Strength', type: 'text', required: false }
+      ]
+    },
     { name: 'School & College', description: 'Student IDs, Fee collection, and Exams' },
     { name: 'University', description: 'Higher education academic management' },
     { name: 'Coaching Center', description: 'Skill development and tutoring' },
@@ -248,6 +279,7 @@ async function main() {
       where: { name: ind.name },
       update: { 
         description: ind.description,
+        attributes: (ind as any).attributes || [],
         modules: {
           set: createdModules.map(m => ({ id: m.id }))
         }
@@ -255,6 +287,7 @@ async function main() {
       create: { 
         name: ind.name, 
         description: ind.description,
+        attributes: (ind as any).attributes || [],
         modules: {
           connect: createdModules.map(m => ({ id: m.id }))
         }

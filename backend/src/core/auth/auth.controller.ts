@@ -37,8 +37,5 @@ export class AuthController {
     return this.authService.logout(Number(userId));
   }
 
-  @Post('switch-tenant/:tenantId')
-  switchTenant(@GetUser('id') userId: string, @Param('tenantId') tenantId: string) {
-    return this.authService.switchTenant(Number(userId), Number(tenantId));
-  }
+
 }

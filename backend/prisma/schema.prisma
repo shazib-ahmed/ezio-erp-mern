@@ -18,7 +18,11 @@ model Industry {
   description String?
   modules     Module[]  // Modules available for this industry
   tenants     Tenant[]
-  createdAt   DateTime  @default(now())
+  attributes  Json?     // Dynamic fields configuration for products in this industry
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([name])
 }
@@ -32,18 +36,22 @@ model Tenant {
   industry      Industry  @relation(fields: [industryId], references: [id])
   
   // Relations to business data
-  users         UserTenant[]
+  users         User[]
   products      Product[]
   customers     Customer[]
   sales         Sale[]
   expenses      Expense[]
   transactions  Transaction[]
   accounts      Account[]
+  categories    Category[]
+  brands        Brand[]
   activeModules Module[]  @relation("TenantModules")
   
   logo          String?   // Company Logo URL/Path
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([tenantId])
   @@index([industryId])
@@ -67,31 +75,24 @@ model User {
   password  String
   
   roles     UserRole[]
-  tenants   UserTenant[]
+  tenantId  Int?
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id])
   
   refreshToken String? @db.Text
   
   avatar    String?  // User Profile Image
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 
   @@index([email])
   @@index([username])
   @@index([phone])
-}
-
-model UserTenant {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  tenantId  Int
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@unique([userId, tenantId])
-  @@index([userId])
   @@index([tenantId])
 }
+
+
 
 model UserRole {
   id        Int      @id @default(autoincrement())
@@ -101,6 +102,8 @@ model UserRole {
   role      Role     @relation(fields: [roleId], references: [id])
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 
   @@unique([userId, roleId])
   @@index([userId])
@@ -117,8 +120,9 @@ model Module {
   industries  Industry[]
   tenants     Tenant[]   @relation("TenantModules")
   
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([code])
 }
@@ -131,8 +135,9 @@ model Feature {
   module      Module       @relation(fields: [moduleId], references: [id])
   permissions Permission[]
   
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([moduleId])
   @@index([code])
@@ -150,8 +155,9 @@ model Permission {
   
   roles       RolePermission[]
   
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([moduleId])
   @@index([featureId])
@@ -164,8 +170,9 @@ model Role {
   permissions RolePermission[]
   users       UserRole[]
   
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([name])
 }
@@ -176,6 +183,10 @@ model RolePermission {
   role         Role       @relation(fields: [roleId], references: [id])
   permissionId Int
   permission   Permission @relation(fields: [permissionId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@unique([roleId, permissionId])
   @@index([roleId])
@@ -189,20 +200,54 @@ model RolePermission {
 model Product {
   id            Int      @id @default(autoincrement())
   name          String
-  sku           String
-  barcode       String?
-  purchasePrice Decimal  @db.Decimal(18, 2)
-  salePrice     Decimal  @db.Decimal(18, 2)
-  stock         Int      @default(0)
-  unit          String   @default("pcs") // pcs, kg, ltr
+  categoryId    Int
+  category      Category @relation(fields: [categoryId], references: [id])
+  brandId       Int?
+  brand         Brand?   @relation(fields: [brandId], references: [id])
   attributes    Json?    // For Industry Specific (e.g., Size: XL, Color: Blue)
   
   tenantId      Int
   tenant        Tenant   @relation(fields: [tenantId], references: [id])
   saleItems     SaleItem[]
 
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
   @@index([tenantId])
-  @@index([sku])
+  @@index([categoryId])
+  @@index([brandId])
+}
+
+model Brand {
+  id          Int       @id @default(autoincrement())
+  name        String
+  logo        String?   // Brand Logo Image URL
+  tenantId    Int
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  products    Product[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([tenantId])
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String
+  
+  tenantId    Int
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  products    Product[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([tenantId])
+  @@index([name])
 }
 
 // ==========================================
@@ -221,6 +266,10 @@ model Customer {
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
   sales       Sale[]
   transactions Transaction[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([tenantId])
   @@index([phone])
@@ -243,7 +292,9 @@ model Sale {
   items           SaleItem[]
   transactions    Transaction[]
   
-  createdAt       DateTime       @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([tenantId])
   @@index([customerId])
@@ -259,6 +310,10 @@ model SaleItem {
   quantity    Int
   unitPrice   Decimal  @db.Decimal(18, 2)
   subTotal    Decimal  @db.Decimal(18, 2)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([saleId])
   @@index([productId])
@@ -295,7 +350,9 @@ model Transaction {
   customerId      Int?
   customer        Customer?       @relation(fields: [customerId], references: [id])
   
-  createdAt       DateTime        @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([tenantId])
   @@index([saleId])
@@ -332,6 +389,10 @@ model Expense {
   tenant          Tenant   @relation(fields: [tenantId], references: [id])
   transactions    Transaction[]
 
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
   @@index([tenantId])
 }
 
@@ -343,7 +404,10 @@ model Account {
   
   tenantId    Int
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  
+  createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([tenantId])
 }

@@ -53,12 +53,7 @@ export interface Tenant {
   activeModules?: Module[];
 }
 
-export interface UserTenant {
-  id: number;
-  userId: number;
-  tenantId: number;
-  tenant: Tenant;
-}
+
 
 export interface User {
   id: number;
@@ -68,7 +63,8 @@ export interface User {
   phone: string;
   avatar?: string;
   roles: UserRole[];
-  tenants: UserTenant[];
+  tenantId?: number;
+  tenant?: Tenant;
   permissions?: string[]; // Flat permissions array from backend
   activeModules?: Module[]; // Active modules for the current tenant
 }

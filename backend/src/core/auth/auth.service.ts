@@ -97,6 +97,7 @@ export class AuthService {
         }
       },
       include: {
+        industry: true,
         activeModules: {
           include: {
             features: true
@@ -114,11 +115,7 @@ export class AuthService {
             roleId: tenantRole.id
           }
         },
-        tenants: {
-          create: {
-            tenantId: tenant.id
-          }
-        }
+        tenantId: tenant.id
       },
       include: {
         roles: {
@@ -139,16 +136,16 @@ export class AuthService {
             }
           }
         },
-        tenants: {
+        tenant: {
           include: {
-            tenant: true
+            industry: true
           }
         }
       }
     });
 
     const roleName = updatedUser.roles[0]?.role.name || 'USER';
-    const activeTenantId = updatedUser.tenants[0]?.tenant.id.toString() || '0';
+    const activeTenantId = updatedUser.tenantId?.toString() || '0';
     const tokens = await this.getTokens(updatedUser.id, updatedUser.email, roleName, activeTenantId);
     await this.updateRefreshToken(updatedUser.id, tokens.refreshToken);
 
@@ -158,7 +155,8 @@ export class AuthService {
       user: {
         ...userWithoutSensitiveData,
         permissions: this.flattenPermissions(updatedUser),
-        activeModules: tenant.activeModules
+        activeModules: tenant.activeModules,
+        industry: tenant.industry
       },
       ...tokens,
     };
@@ -194,9 +192,9 @@ export class AuthService {
             }
           }
         },
-        tenants: {
+        tenant: {
           include: {
-            tenant: true
+            industry: true
           }
         }
       }
@@ -215,13 +213,12 @@ export class AuthService {
     const roleName = isSuperAdmin ? 'SUPER_ADMIN' : (user.roles[0]?.role.name || 'USER');
     
     // Get active tenant with its modules and features
-    const activeUserTenant = user.tenants[0];
-    const activeTenantId = activeUserTenant?.tenant.id || 0;
+    const activeTenantId = user.tenantId || 0;
     
     let activeModules: any[] = [];
-    if (activeUserTenant) {
+    if (user.tenantId) {
       const tenantWithModules = await this.prisma.tenant.findUnique({
-        where: { id: activeTenantId },
+        where: { id: user.tenantId },
         include: {
           activeModules: {
             include: {
@@ -242,7 +239,8 @@ export class AuthService {
       user: {
         ...userWithoutSensitiveData,
         permissions: this.flattenPermissions(user),
-        activeModules: activeModules // Structured data for dynamic UI
+        activeModules: activeModules, // Structured data for dynamic UI
+        industry: user.tenant?.industry
       },
       ...tokens,
     };
@@ -272,7 +270,7 @@ export class AuthService {
       where: { id: userId },
       include: {
         roles: { include: { role: true } },
-        tenants: { include: { tenant: true } }
+        tenant: true
       }
     });
 
@@ -287,7 +285,7 @@ export class AuthService {
 
     const isSuperAdmin = user.roles.some(r => r.role.name === 'SUPER_ADMIN');
     const roleName = isSuperAdmin ? 'SUPER_ADMIN' : (user.roles[0]?.role.name || 'USER');
-    const activeTenantId = user.tenants[0]?.tenant.id.toString() || '0';
+    const activeTenantId = user.tenantId?.toString() || '0';
 
     const tokens = await this.getTokens(user.id, user.email, roleName, activeTenantId);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
@@ -334,16 +332,16 @@ export class AuthService {
           include: {
             role: {
               include: {
-                permissions: true
+                permissions: {
+                  include: {
+                    permission: true
+                  }
+                }
               }
             }
           }
         },
-        tenants: {
-          include: {
-            tenant: true
-          }
-        }
+        tenant: true
       }
     });
   }
@@ -365,15 +363,12 @@ export class AuthService {
             }
           }
         },
-        tenants: {
+        tenant: {
           include: {
-            tenant: {
+            industry: true,
+            activeModules: {
               include: {
-                activeModules: {
-                  include: {
-                    features: true
-                  }
-                }
+                features: true
               }
             }
           }
@@ -386,56 +381,15 @@ export class AuthService {
     }
 
     const { password: _, refreshToken: __, ...userWithoutSensitiveData } = user;
-    const activeModules = user.tenants[0]?.tenant.activeModules || [];
+    const activeModules = user.tenant?.activeModules || [];
 
     return {
       ...userWithoutSensitiveData,
       permissions: this.flattenPermissions(user),
-      activeModules: activeModules
+      activeModules: activeModules,
+      industry: user.tenant?.industry
     };
   }
 
-  async switchTenant(userId: number, tenantId: number) {
-    // 1. Verify user belongs to this tenant
-    const userTenant = await this.prisma.userTenant.findFirst({
-      where: { userId, tenantId },
-      include: {
-        user: {
-          include: {
-            roles: { include: { role: true } }
-          }
-        },
-        tenant: {
-          include: {
-            activeModules: {
-              include: { features: true }
-            }
-          }
-        }
-      }
-    });
 
-    if (!userTenant) {
-      throw new UnauthorizedException('You do not have access to this tenant');
-    }
-
-    const user = userTenant.user;
-    const isSuperAdmin = user.roles.some(r => r.role.name === 'SUPER_ADMIN');
-    const roleName = isSuperAdmin ? 'SUPER_ADMIN' : (user.roles[0]?.role.name || 'USER');
-
-    // 2. Issue new tokens with the new tenantId
-    const tokens = await this.getTokens(userId, user.email, roleName, tenantId.toString());
-    await this.updateRefreshToken(userId, tokens.refreshToken);
-
-    const { password: _, refreshToken: __, ...userWithoutSensitiveData } = user;
-
-    return {
-      user: {
-        ...userWithoutSensitiveData,
-        permissions: this.flattenPermissions(user),
-        activeModules: userTenant.tenant.activeModules
-      },
-      ...tokens
-    };
-  }
 }

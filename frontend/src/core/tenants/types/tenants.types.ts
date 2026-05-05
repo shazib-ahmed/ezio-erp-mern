@@ -21,7 +21,7 @@ export interface Tenant {
   tenantId: number;
   industryId: number;
   industry: Industry;
-  users: { user: User }[];
+  users: User[];
   activeModules: Module[];
   createdAt: string;
   updatedAt: string;

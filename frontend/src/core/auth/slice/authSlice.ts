@@ -17,13 +17,15 @@ const initialState: AuthState = {
 // Initialize auth from secure storage
 export const initializeAuth = createAsyncThunk(
   'auth/initialize',
-  async (_, { rejectWithValue }) => {
+  async (_, { dispatch, rejectWithValue }) => {
     try {
       const user = await getSecureData('auth_user');
       const accessToken = await getSecureData('auth_accessToken');
       const refreshToken = await getSecureData('auth_refreshToken');
 
       if (accessToken && user) {
+        // Fetch latest profile in background to hydrate state with fresh DB data
+        dispatch(fetchMe());
         return { user, accessToken, refreshToken };
       }
       return null;
@@ -129,6 +131,20 @@ export const updateProfile = createAsyncThunk(
   }
 );
 
+export const fetchMe = createAsyncThunk(
+  'auth/fetchMe',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get('/auth/me');
+      const user = response.data.data;
+      await saveSecureData('auth_user', user);
+      return user;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch user data');
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -230,6 +246,10 @@ const authSlice = createSlice({
       .addCase(updateProfile.rejected, (state, action) => {
         state.isSubmitting = false;
         state.error = action.payload as string;
+      })
+      .addCase(fetchMe.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.isAuthenticated = true;
       });
   },
 });

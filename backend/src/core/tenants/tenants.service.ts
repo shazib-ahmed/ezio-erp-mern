@@ -6,14 +6,15 @@ export class TenantsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(limit: number = 10, cursor?: number, search?: string) {
-    const whereClause = search ? {
-      OR: [
-        { name: { contains: search } },
-        { phone: { contains: search } },
-        {
-          users: {
-            some: {
-              user: {
+    const whereClause: any = {
+      deletedAt: null,
+      ...(search && {
+        OR: [
+          { name: { contains: search } },
+          { phone: { contains: search } },
+          {
+            users: {
+              some: {
                 OR: [
                   { name: { contains: search } },
                   { email: { contains: search } }
@@ -21,9 +22,9 @@ export class TenantsService {
               }
             }
           }
-        }
-      ]
-    } : undefined;
+        ]
+      })
+    };
 
     const tenants = await this.prisma.tenant.findMany({
       take: limit + 1,
@@ -31,11 +32,7 @@ export class TenantsService {
       where: whereClause,
       include: {
         industry: true,
-        users: {
-          include: {
-            user: true,
-          },
-        },
+        users: true,
         activeModules: true,
       },
       orderBy: {
@@ -58,15 +55,11 @@ export class TenantsService {
   }
 
   async findOne(id: number) {
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id },
+    const tenant = await this.prisma.tenant.findFirst({
+      where: { id, deletedAt: null },
       include: {
         industry: true,
-        users: {
-          include: {
-            user: true,
-          },
-        },
+        users: true,
         activeModules: true,
       },
     });
@@ -79,10 +72,7 @@ export class TenantsService {
   }
 
   async update(id: number, data: any) {
-    const tenant = await this.prisma.tenant.findUnique({ where: { id } });
-    if (!tenant) {
-      throw new NotFoundException(`Tenant with ID ${id} not found`);
-    }
+    await this.findOne(id);
 
     return this.prisma.tenant.update({
       where: { id },
@@ -94,14 +84,11 @@ export class TenantsService {
   }
 
   async remove(id: number) {
-    const tenant = await this.prisma.tenant.findUnique({ where: { id } });
-    if (!tenant) {
-      throw new NotFoundException(`Tenant with ID ${id} not found`);
-    }
+    await this.findOne(id);
 
-    // Instead of deleting, we might want to deactivate, but for now we'll delete
-    return this.prisma.tenant.delete({
+    return this.prisma.tenant.update({
       where: { id },
+      data: { deletedAt: new Date() }
     });
   }
 

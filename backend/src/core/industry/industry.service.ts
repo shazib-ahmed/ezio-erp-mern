@@ -17,12 +17,13 @@ export class IndustryService implements IIndustryService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createIndustryDto: CreateIndustryDto): Promise<Industry> {
-    const { name, description, moduleIds } = createIndustryDto;
+    const { name, description, moduleIds, attributes } = createIndustryDto;
     
     return this.prisma.industry.create({
       data: {
         name,
         description,
+        attributes,
         modules: moduleIds ? {
           connect: moduleIds.map(id => ({ id }))
         } : undefined
@@ -34,9 +35,12 @@ export class IndustryService implements IIndustryService {
   }
 
   async findAll(limit: number = 10, cursor?: number, search?: string): Promise<{ data: Industry[]; nextCursor: number | null }> {
-    const whereClause = search ? {
-      name: { contains: search }
-    } : undefined;
+    const whereClause: any = {
+      deletedAt: null,
+      ...(search && {
+        name: { contains: search }
+      })
+    };
 
     const industries = await this.prisma.industry.findMany({
       take: limit + 1,
@@ -66,8 +70,8 @@ export class IndustryService implements IIndustryService {
   }
 
   async findOne(id: number): Promise<Industry> {
-    const industry = await this.prisma.industry.findUnique({
-      where: { id },
+    const industry = await this.prisma.industry.findFirst({
+      where: { id, deletedAt: null },
       include: {
         modules: true,
         tenants: true
@@ -82,13 +86,16 @@ export class IndustryService implements IIndustryService {
   }
 
   async update(id: number, updateIndustryDto: UpdateIndustryDto): Promise<Industry> {
-    const { name, description, moduleIds } = updateIndustryDto;
+    const { name, description, moduleIds, attributes } = updateIndustryDto;
+    
+    await this.findOne(id); // Ensure exists and not deleted
 
     return this.prisma.industry.update({
       where: { id },
       data: {
         name,
         description,
+        attributes,
         modules: moduleIds ? {
           set: moduleIds.map(id => ({ id }))
         } : undefined
@@ -97,8 +104,11 @@ export class IndustryService implements IIndustryService {
   }
 
   async remove(id: number): Promise<Industry> {
-    return this.prisma.industry.delete({
-      where: { id }
+    await this.findOne(id); // Ensure exists and not deleted
+    
+    return this.prisma.industry.update({
+      where: { id },
+      data: { deletedAt: new Date() }
     });
   }
 }

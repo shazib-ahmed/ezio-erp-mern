@@ -13,4 +13,7 @@ export class CreateIndustryDto {
   @IsInt({ each: true })
   @IsOptional()
   moduleIds?: number[];
+
+  @IsOptional()
+  attributes?: any;
 }

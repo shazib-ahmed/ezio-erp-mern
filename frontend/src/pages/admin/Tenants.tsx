@@ -170,17 +170,17 @@ const TenantsPage: React.FC = () => {
                       <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block mb-2">User</span>
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs border border-primary/20 overflow-hidden shrink-0">
-                          {tenant.users[0]?.user.avatar ? (
-                            <img src={tenant.users[0].user.avatar} alt={tenant.users[0].user.name} className="w-full h-full object-cover" />
+                          {tenant.users[0]?.avatar ? (
+                            <img src={tenant.users[0].avatar} alt={tenant.users[0].name} className="w-full h-full object-cover" />
                           ) : (
-                            tenant.users[0]?.user.name?.charAt(0) || 'U'
+                            tenant.users[0]?.name?.charAt(0) || 'U'
                           )}
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-foreground line-clamp-1">{tenant.users[0]?.user.name}</span>
+                          <span className="text-sm font-bold text-foreground line-clamp-1">{tenant.users[0]?.name}</span>
                           <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                             <Mail className="h-2.5 w-2.5" />
-                            {tenant.users[0]?.user.email}
+                            {tenant.users[0]?.email}
                           </span>
                         </div>
                       </div>
@@ -249,8 +249,8 @@ const TenantsPage: React.FC = () => {
           companyName: selectedTenant.name,
           subdomain: selectedTenant.subdomain || '',
           industry: selectedTenant.industry?.name || '',
-          ownerName: selectedTenant.users[0]?.user.name || '',
-          email: selectedTenant.users[0]?.user.email || '',
+          ownerName: selectedTenant.users[0]?.name || '',
+          email: selectedTenant.users[0]?.email || '',
           status: 'Active'
         } : undefined}
       />

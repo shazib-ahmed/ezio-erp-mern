@@ -8,7 +8,7 @@ import { Input } from '@/shared/ui/input';
 
 const Ledger: React.FC = () => {
   return (
-    <MainLayout>
+    <>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">General Ledger</h1>
@@ -42,7 +42,7 @@ const Ledger: React.FC = () => {
       </div>
 
       <TransactionList />
-    </MainLayout>
+    </>
   );
 };
 

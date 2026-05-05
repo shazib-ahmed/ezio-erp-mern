@@ -15,7 +15,7 @@ const Accounts: React.FC = () => {
   };
 
   return (
-    <MainLayout>
+    <>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Accounts</h1>
@@ -51,7 +51,7 @@ const Accounts: React.FC = () => {
         onClose={() => setIsModalOpen(false)} 
         onSubmit={handleCreateAccount}
       />
-    </MainLayout>
+    </>
   );
 };
 

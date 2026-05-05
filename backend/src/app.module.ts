@@ -11,8 +11,23 @@ import { AccountModule } from './core/account/account.module';
 import { JwtAuthGuard } from './core/auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '@/common/guards/permissions.guard';
 
+import { InventoryModule } from './modules/inventory/inventory.module';
+import { RolesModule } from './core/roles/roles.module';
+import { CategoryModule } from './modules/category/category.module';
+import { BrandModule } from './modules/brand/brand.module';
+
 @Module({
-  imports: [PrismaModule, IndustryModule, AuthModule, TenantsModule, AccountModule],
+  imports: [
+    PrismaModule, 
+    IndustryModule, 
+    AuthModule, 
+    TenantsModule, 
+    AccountModule,
+    InventoryModule,
+    RolesModule,
+    CategoryModule,
+    BrandModule
+  ],
   controllers: [AppController],
   providers: [
     AppService,
@@ -26,4 +41,4 @@ import { PermissionsGuard } from '@/common/guards/permissions.guard';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
