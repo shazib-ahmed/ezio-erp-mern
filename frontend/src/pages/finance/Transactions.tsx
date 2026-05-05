@@ -1,12 +1,21 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import React, { useState, useEffect } from 'react';
+import { useAppDispatch } from '@/app/hooks';
 import { fetchTransactions, fetchFinanceStats } from '@/modules/finance/slice/transactionSlice';
 import { fetchAccounts } from '@/modules/finance/slice/accountSlice';
+import axios from '@/shared/lib/axios';
+import { Button } from '@/shared/ui/button';
+import { 
+  Download, 
+  Search, 
+  FilterX, 
+  FileText, 
+  FileSpreadsheet, 
+  FileCode,
+  ChevronDown
+} from 'lucide-react';
+import { Input } from '@/shared/ui/input';
 import { TransactionList } from '@/modules/finance/components/TransactionList';
 import { FinanceSummary } from '@/modules/finance/components/FinanceSummary';
-import { Button } from '@/shared/ui/button';
-import { Plus, Search, FilterX } from 'lucide-react';
-import { Input } from '@/shared/ui/input';
 import { useDebounce } from '@/shared/hooks/useDebounce';
 import { 
   Select, 
@@ -15,36 +24,28 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/shared/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/shared/ui/dropdown-menu';
+import { ExportModal } from '@/modules/finance/components/ExportModal';
+import { toast } from 'sonner';
+import { getSecureData } from '@/shared/lib/storage';
 
 const Transactions: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { accounts } = useAppSelector((state) => state.accounts);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('ALL');
   const [filterMethod, setFilterMethod] = useState<string>('ALL');
   const [filterAccount, setFilterAccount] = useState<string>('ALL');
   
+  const [exportModal, setExportModal] = useState<{ open: boolean; type: string }>({ open: false, type: '' });
+  const [isExporting, setIsExporting] = useState(false);
+  
   const debouncedSearch = useDebounce(searchQuery, 500);
-
-  // Dynamically derive available payment methods from accounts
-  const availableMethods = useMemo(() => {
-    const methods = new Set<string>();
-    if (!Array.isArray(accounts)) return [];
-
-    accounts.forEach(acc => {
-      if (acc.accountType === 'CASH') methods.add('CASH');
-      if (acc.accountType === 'BANK') methods.add('BANK_TRANSFER');
-      if (acc.accountType === 'MOBILE_WALLET') {
-        const name = acc.name.toLowerCase();
-        if (name.includes('bkash')) methods.add('BKASH');
-        else if (name.includes('nagad')) methods.add('NAGAD');
-        else methods.add('BKASH'); // Default to BKASH if not specified
-      }
-    });
-    
-    return Array.from(methods);
-  }, [accounts]);
 
   useEffect(() => {
     dispatch(fetchAccounts({}));
@@ -70,14 +71,31 @@ const Transactions: React.FC = () => {
     setFilterAccount('ALL');
   };
 
-  const getMethodLabel = (method: string) => {
-    switch (method) {
-      case 'BANK_TRANSFER': return 'Bank';
-      case 'BKASH': return 'bKash';
-      case 'NAGAD': return 'Nagad';
-      case 'CASH': return 'Cash';
-      case 'CARD': return 'Card';
-      default: return method;
+  const handleExport = async (fromDate: string, toDate: string) => {
+    setIsExporting(true);
+    try {
+      // First, make a small request with axios to ensure the token is fresh
+      // If it's expired, the axios interceptor will handle the refresh automatically
+      await axios.get('/finance/transactions/stats');
+      
+      // Now get the fresh token from storage
+      const token = await getSecureData('auth_accessToken');
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      
+      // Build the download URL with token in query param
+      const downloadUrl = `${API_URL}/finance/transactions/export/${exportModal.type}?fromDate=${fromDate}&toDate=${toDate}&token=${token}`;
+      
+      // Use hidden iframe or window.location for download
+      // This bypasses axios interception and IDM related CORS errors
+      window.location.href = downloadUrl;
+      
+      toast.success(`${exportModal.type.toUpperCase()} report generation started`);
+      setExportModal({ open: false, type: '' });
+    } catch (err: any) {
+      toast.error('Failed to initiate download');
+    } finally {
+      // Small timeout to show the loader briefly
+      setTimeout(() => setIsExporting(false), 2000);
     }
   };
 
@@ -86,17 +104,27 @@ const Transactions: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Transactions</h1>
-          <p className="text-muted-foreground">Monitor all financial movements and history.</p>
+          <p className="text-muted-foreground">Monitor all financial movements across your organization.</p>
         </div>
         
-        <div className="flex gap-3">
-          <Button variant="outline" className="gap-2 h-11">
-            Export CSV
-          </Button>
-          <Button className="gap-2 h-11 bg-primary font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all">
-            <Plus className="h-4 w-4" /> New Transaction
-          </Button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="gap-2 h-11 bg-primary px-6 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all">
+              <Download className="h-5 w-5" /> Export Report <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48 bg-popover border-border">
+            <DropdownMenuItem onClick={() => setExportModal({ open: true, type: 'csv' })} className="gap-2 cursor-pointer">
+              <FileCode className="h-4 w-4 text-orange-500" /> Export to CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setExportModal({ open: true, type: 'excel' })} className="gap-2 cursor-pointer">
+              <FileSpreadsheet className="h-4 w-4 text-green-500" /> Export to Excel
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setExportModal({ open: true, type: 'pdf' })} className="gap-2 cursor-pointer">
+              <FileText className="h-4 w-4 text-red-500" /> Export to PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <FinanceSummary />
@@ -106,7 +134,7 @@ const Transactions: React.FC = () => {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search by ID, purpose, type, method or amount..." 
+              placeholder="Search by TrxID, amount or purpose..." 
               className="pl-10 h-11 bg-background border-border w-full"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -131,21 +159,10 @@ const Transactions: React.FC = () => {
               </SelectTrigger>
               <SelectContent className="bg-popover">
                 <SelectItem value="ALL">All Methods</SelectItem>
-                {availableMethods.map(method => (
-                  <SelectItem key={method} value={method}>{getMethodLabel(method)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filterAccount} onValueChange={setFilterAccount}>
-              <SelectTrigger className="w-[180px] h-11 bg-background">
-                <SelectValue placeholder="Account" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                <SelectItem value="ALL">All Accounts</SelectItem>
-                {Array.isArray(accounts) && accounts.map(acc => (
-                  <SelectItem key={acc.id} value={acc.id.toString()}>{acc.name}</SelectItem>
-                ))}
+                <SelectItem value="CASH">Cash</SelectItem>
+                <SelectItem value="BANK_TRANSFER">Bank</SelectItem>
+                <SelectItem value="BKASH">bKash</SelectItem>
+                <SelectItem value="NAGAD">Nagad</SelectItem>
               </SelectContent>
             </Select>
 
@@ -163,6 +180,14 @@ const Transactions: React.FC = () => {
       </div>
 
       <TransactionList />
+
+      <ExportModal 
+        isOpen={exportModal.open}
+        onClose={() => setExportModal({ ...exportModal, open: false })}
+        onExport={handleExport}
+        title={`Export Transactions as ${exportModal.type.toUpperCase()}`}
+        isExporting={isExporting}
+      />
     </div>
   );
 };

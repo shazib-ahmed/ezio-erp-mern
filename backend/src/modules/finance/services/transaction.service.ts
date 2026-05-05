@@ -82,4 +82,37 @@ export class TransactionService {
       netBalance,
     };
   }
+
+  async getExportData(tenantId: number, fromDate: string, toDate: string) {
+    const start = new Date(fromDate);
+    start.setHours(0, 0, 0, 0);
+    
+    const end = new Date(toDate);
+    end.setHours(23, 59, 59, 999);
+
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        createdAt: {
+          gte: start,
+          lte: end,
+        },
+      },
+      include: {
+        account: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return transactions.map((t) => ({
+      Date: new Date(t.createdAt).toLocaleDateString(),
+      TrxID: t.trxId,
+      Purpose: t.purpose,
+      Account: t.account?.name || 'N/A',
+      Method: t.method,
+      Amount: Number(t.amount),
+      Type: t.type,
+    }));
+  }
 }

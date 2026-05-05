@@ -1,5 +1,4 @@
 import React from 'react';
-import { MainLayout } from '@/shared/components/layout/MainLayout';
 import { FinanceSummary } from '@/modules/finance/components/FinanceSummary';
 import { TransactionList } from '@/modules/finance/components/TransactionList';
 import { Button } from '@/shared/ui/button';
