@@ -63,4 +63,27 @@ export class AccountService {
 
     return resultUser;
   }
+
+  async updateTenant(tenantId: number, dto: any) {
+    const { name, currencyCode, currencySymbol } = dto;
+    
+    const updatedTenant = await this.prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        name,
+        currencyCode,
+        currencySymbol,
+      },
+      include: {
+        industry: true,
+        activeModules: {
+          include: {
+            features: true
+          }
+        }
+      }
+    });
+
+    return updatedTenant;
+  }
 }

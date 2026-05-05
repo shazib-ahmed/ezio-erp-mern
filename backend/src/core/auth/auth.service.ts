@@ -240,7 +240,8 @@ export class AuthService {
         ...userWithoutSensitiveData,
         permissions: this.flattenPermissions(user),
         activeModules: activeModules, // Structured data for dynamic UI
-        industry: user.tenant?.industry
+        industry: user.tenant?.industry,
+        tenant: user.tenant // Include full tenant info
       },
       ...tokens,
     };
@@ -387,7 +388,8 @@ export class AuthService {
       ...userWithoutSensitiveData,
       permissions: this.flattenPermissions(user),
       activeModules: activeModules,
-      industry: user.tenant?.industry
+      industry: user.tenant?.industry,
+      tenant: user.tenant // Include full tenant info
     };
   }
 

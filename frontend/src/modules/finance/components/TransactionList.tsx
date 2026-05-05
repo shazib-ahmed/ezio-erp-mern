@@ -14,10 +14,12 @@ import { fetchTransactions } from '../slice/transactionSlice';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { InfiniteScroll } from '@/shared/components/common/InfiniteScroll';
 import { format } from 'date-fns';
+import { useCurrency } from '@/shared/hooks/useCurrency';
 
 const TransactionList: React.FC = () => {
   const dispatch = useAppDispatch();
   const { transactions, loading, nextCursor } = useAppSelector((state) => state.transactions);
+  const { formatCurrency } = useCurrency();
 
   useEffect(() => {
     dispatch(fetchTransactions());
@@ -88,7 +90,7 @@ const TransactionList: React.FC = () => {
                     "font-bold",
                     item.type === 'INCOME' ? "text-primary" : "text-destructive"
                   )}>
-                    {item.type === 'INCOME' ? '+' : '-'} ${Number(item.amount).toLocaleString()}
+                    {item.type === 'INCOME' ? '+' : '-'} {formatCurrency(item.amount)}
                   </TableCell>
                   <TableCell>
                     <Badge 

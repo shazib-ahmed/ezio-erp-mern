@@ -51,6 +51,8 @@ export interface Tenant {
   tenantId: number; // The Owner User ID
   industryId: number;
   activeModules?: Module[];
+  currencyCode?: string;
+  currencySymbol?: string;
 }
 
 

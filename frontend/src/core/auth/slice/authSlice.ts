@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from '@/shared/lib/axios';
-import { AuthState } from '../types/auth.types';
+import { AuthState, User } from '../types/auth.types';
 import { saveSecureData, getSecureData, removeSecureData } from '@/shared/lib/storage';
 
 const initialState: AuthState = {
@@ -131,6 +131,34 @@ export const updateProfile = createAsyncThunk(
   }
 );
 
+export const updateTenantInfo = createAsyncThunk<User, any>(
+  'auth/updateTenant',
+  async (data: any, { getState, rejectWithValue }) => {
+    try {
+      const response = await axios.patch('/account/tenant', data);
+      const tenant = response.data.data;
+      
+      const state = getState() as { auth: AuthState };
+      if (!state.auth.user) throw new Error('User not found');
+
+      const updatedUser = { 
+        ...state.auth.user, 
+        tenant: {
+          ...state.auth.user.tenant,
+          ...tenant
+        }
+      };
+      
+      // Update secure storage
+      await saveSecureData('auth_user', updatedUser);
+      
+      return updatedUser;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Business update failed');
+    }
+  }
+);
+
 export const fetchMe = createAsyncThunk(
   'auth/fetchMe',
   async (_, { rejectWithValue }) => {
@@ -244,6 +272,18 @@ const authSlice = createSlice({
         state.user = action.payload;
       })
       .addCase(updateProfile.rejected, (state, action) => {
+        state.isSubmitting = false;
+        state.error = action.payload as string;
+      })
+      .addCase(updateTenantInfo.pending, (state) => {
+        state.isSubmitting = true;
+        state.error = null;
+      })
+      .addCase(updateTenantInfo.fulfilled, (state, action) => {
+        state.isSubmitting = false;
+        state.user = action.payload;
+      })
+      .addCase(updateTenantInfo.rejected, (state, action) => {
         state.isSubmitting = false;
         state.error = action.payload as string;
       })

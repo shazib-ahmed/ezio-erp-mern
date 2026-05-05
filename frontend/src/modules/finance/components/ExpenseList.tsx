@@ -16,6 +16,7 @@ import { fetchAccounts } from '../slice/accountSlice';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { toast } from 'sonner';
 import { DeleteConfirmationModal } from '@/shared/components/modals/DeleteConfirmationModal';
+import { useCurrency } from '@/shared/hooks/useCurrency';
 
 interface ExpenseListProps {
   onEdit: (expense: any) => void;
@@ -24,6 +25,7 @@ interface ExpenseListProps {
 const ExpenseList: React.FC<ExpenseListProps> = ({ onEdit }) => {
   const dispatch = useAppDispatch();
   const { expenses, loading } = useAppSelector((state) => state.expenses);
+  const { formatCurrency } = useCurrency();
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -114,7 +116,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ onEdit }) => {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1 font-bold text-destructive">
-                      -${Number(item.amount).toLocaleString()}
+                      -{formatCurrency(item.amount)}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">

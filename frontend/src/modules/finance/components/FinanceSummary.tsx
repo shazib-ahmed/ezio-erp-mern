@@ -4,10 +4,12 @@ import { StatsCard } from '@/shared/components/common/StatsCard';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchFinanceStats } from '../slice/transactionSlice';
 import { Skeleton } from '@/shared/ui/skeleton';
+import { useCurrency } from '@/shared/hooks/useCurrency';
 
 const FinanceSummary: React.FC = () => {
   const dispatch = useAppDispatch();
   const { stats, loading } = useAppSelector((state) => state.transactions);
+  const { formatCurrency } = useCurrency();
 
   useEffect(() => {
     dispatch(fetchFinanceStats());
@@ -27,7 +29,7 @@ const FinanceSummary: React.FC = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
       <StatsCard 
         label="Total Revenue" 
-        value={`$${Number(stats?.totalIncome || 0).toLocaleString()}`} 
+        value={formatCurrency(stats?.totalIncome || 0)} 
         change="+0%" 
         trend="up" 
         icon={ArrowUpCircle} 
@@ -35,7 +37,7 @@ const FinanceSummary: React.FC = () => {
       />
       <StatsCard 
         label="Total Expenses" 
-        value={`$${Number(stats?.totalExpense || 0).toLocaleString()}`} 
+        value={formatCurrency(stats?.totalExpense || 0)} 
         change="+0%" 
         trend="down" 
         icon={ArrowDownCircle} 
@@ -43,7 +45,7 @@ const FinanceSummary: React.FC = () => {
       />
       <StatsCard 
         label="Net Balance" 
-        value={`$${Number(stats?.netBalance || 0).toLocaleString()}`} 
+        value={formatCurrency(stats?.netBalance || 0)} 
         change="+0%" 
         trend="up" 
         icon={Wallet} 

@@ -27,4 +27,12 @@ export class AccountController {
   ) {
     return this.accountService.updateProfile(userId, dto, file);
   }
+
+  @Patch('tenant')
+  async updateTenant(
+    @GetUser('tenantId') tenantId: number,
+    @Body() dto: any,
+  ) {
+    return this.accountService.updateTenant(Number(tenantId), dto);
+  }
 }

@@ -22,6 +22,7 @@ import { cn } from '@/shared/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { DatePicker } from '@/shared/components/common/DatePicker';
 import { parseISO } from 'date-fns';
+import { useCurrency } from '@/shared/hooks/useCurrency';
 
 interface ExpenseFormModalProps {
   isOpen: boolean;
@@ -40,6 +41,7 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const { accounts } = useAppSelector((state) => state.accounts);
+  const { currencySymbol } = useCurrency();
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const [formData, setFormData] = useState({
@@ -180,7 +182,7 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
               {errors.category && <p className="text-[12px] text-destructive font-medium">{errors.category}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amount" className={cn(errors.amount && "text-destructive")}>Amount</Label>
+              <Label htmlFor="amount" className={cn(errors.amount && "text-destructive")}>Amount ({currencySymbol})</Label>
               <Input
                 id="amount"
                 type="number"

@@ -18,6 +18,7 @@ import {
 } from '@/shared/ui/select';
 import { cn } from '@/shared/lib/utils';
 import { Loader2 } from 'lucide-react';
+import { useCurrency } from '@/shared/hooks/useCurrency';
 
 interface AccountFormModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({
   isSubmitting = false,
   initialData
 }) => {
+  const { currencySymbol } = useCurrency();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     name: '',
@@ -124,7 +126,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({
 
           <div className="space-y-2">
             <Label htmlFor="balance" className={cn(errors.balance && "text-destructive")}>
-              {initialData ? 'Account Balance' : 'Initial Balance'}
+              {initialData ? 'Account Balance' : 'Initial Balance'} ({currencySymbol})
             </Label>
             <Input
               id="balance"

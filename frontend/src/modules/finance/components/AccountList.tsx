@@ -15,6 +15,7 @@ import { fetchAccounts, deleteAccount } from '../slice/accountSlice';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { toast } from 'sonner';
 import { DeleteConfirmationModal } from '@/shared/components/modals/DeleteConfirmationModal';
+import { useCurrency } from '@/shared/hooks/useCurrency';
 
 interface AccountListProps {
   onEdit: (account: any) => void;
@@ -23,6 +24,7 @@ interface AccountListProps {
 const AccountList: React.FC<AccountListProps> = ({ onEdit }) => {
   const dispatch = useAppDispatch();
   const { accounts, loading } = useAppSelector((state) => state.accounts);
+  const { formatCurrency } = useCurrency();
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -100,7 +102,7 @@ const AccountList: React.FC<AccountListProps> = ({ onEdit }) => {
                     </Badge>
                   </TableCell>
                   <TableCell className="font-bold text-primary">
-                    ${Number(account.balance).toLocaleString()}
+                    {formatCurrency(account.balance)}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

@@ -5,8 +5,8 @@ import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Button } from '@/shared/ui/button';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { updateProfile } from '@/core/auth/slice/authSlice';
-import { User, Lock, Save, Camera, Loader2 } from 'lucide-react';
+import { updateProfile, updateTenantInfo } from '@/core/auth/slice/authSlice';
+import { User, Lock, Save, Camera, Loader2, Building2, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Settings: React.FC = () => {
@@ -18,6 +18,12 @@ const Settings: React.FC = () => {
     username: user?.username || '',
     email: user?.email || '',
     phone: user?.phone || '',
+  });
+
+  const [businessData, setBusinessData] = React.useState({
+    name: user?.tenant?.name || '',
+    currencyCode: user?.tenant?.currencyCode || 'USD',
+    currencySymbol: user?.tenant?.currencySymbol || '$',
   });
 
   const [passwordData, setPasswordData] = React.useState({
@@ -33,6 +39,11 @@ const Settings: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setProfileData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleBusinessChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setBusinessData(prev => ({ ...prev, [id]: value }));
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,6 +80,15 @@ const Settings: React.FC = () => {
     }
   };
 
+  const handleBusinessSubmit = async () => {
+    try {
+      await dispatch(updateTenantInfo(businessData)).unwrap();
+      toast.success('Business settings updated!');
+    } catch (err: any) {
+      toast.error(err || 'Failed to update business settings');
+    }
+  };
+
   const handlePasswordSubmit = async () => {
     if (!passwordData.newPassword) return toast.error('Please enter a new password');
     if (passwordData.newPassword !== passwordData.confirmPassword) {
@@ -91,13 +111,16 @@ const Settings: React.FC = () => {
     <>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground">System Settings</h1>
-        <p className="text-muted-foreground">Manage your personal profile and security credentials.</p>
+        <p className="text-muted-foreground">Manage your personal profile and business configurations.</p>
       </div>
 
       <Tabs defaultValue="profile" className="max-w-4xl">
         <TabsList className="mb-4">
           <TabsTrigger value="profile" className="gap-2">
             <User className="h-4 w-4" /> Profile
+          </TabsTrigger>
+          <TabsTrigger value="business" className="gap-2">
+            <Building2 className="h-4 w-4" /> Business
           </TabsTrigger>
           <TabsTrigger value="credentials" className="gap-2">
             <Lock className="h-4 w-4" /> Credentials
@@ -164,6 +187,46 @@ const Settings: React.FC = () => {
                 >
                   {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} 
                   Save Profile
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="business">
+          <Card className="border-border bg-card">
+            <div className="p-6 border-b border-border bg-muted/20">
+              <h3 className="font-bold text-lg">Business Settings</h3>
+              <p className="text-sm text-muted-foreground">Configure your company identity and regional preferences.</p>
+            </div>
+            <CardContent className="p-6 space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="name">Business Name</Label>
+                  <Input id="name" value={businessData.name} onChange={handleBusinessChange} disabled={isSubmitting} className="bg-background border-border h-11" />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="currencyCode" className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" /> Currency Code
+                  </Label>
+                  <Input id="currencyCode" value={businessData.currencyCode} onChange={handleBusinessChange} disabled={isSubmitting} placeholder="e.g., USD, BDT, EUR" className="bg-background border-border h-11" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="currencySymbol">Currency Symbol</Label>
+                  <Input id="currencySymbol" value={businessData.currencySymbol} onChange={handleBusinessChange} disabled={isSubmitting} placeholder="e.g., $, ৳, €" className="bg-background border-border h-11" />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t border-border">
+                <Button 
+                  className="gap-2 h-11 px-8" 
+                  onClick={handleBusinessSubmit}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} 
+                  Update Business Info
                 </Button>
               </div>
             </CardContent>
