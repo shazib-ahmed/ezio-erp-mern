@@ -55,19 +55,20 @@ const transactionSlice = createSlice({
       })
       .addCase(fetchTransactions.fulfilled, (state, action) => {
         state.loading = false;
-        const payload = action.payload;
+        const response = action.payload;
         
         let newData = [];
         let nextCursor = null;
 
-        if (payload?.data && Array.isArray(payload.data.data)) {
-          newData = payload.data.data;
-          nextCursor = payload.data.nextCursor;
-        } else if (Array.isArray(payload?.data)) {
-          newData = payload.data;
-          nextCursor = payload.nextCursor;
-        } else if (Array.isArray(payload)) {
-          newData = payload;
+        // Backend wraps response in { success: true, data: { data: [], nextCursor: ... } }
+        if (response?.data) {
+          const innerData = response.data;
+          if (Array.isArray(innerData.data)) {
+            newData = innerData.data;
+            nextCursor = innerData.nextCursor;
+          } else if (Array.isArray(innerData)) {
+            newData = innerData;
+          }
         }
 
         if (action.meta.arg?.cursor) {
@@ -82,7 +83,7 @@ const transactionSlice = createSlice({
         state.error = action.payload as string;
       })
       .addCase(fetchFinanceStats.fulfilled, (state, action) => {
-        state.stats = action.payload;
+        state.stats = action.payload?.data || null;
       });
   },
 });

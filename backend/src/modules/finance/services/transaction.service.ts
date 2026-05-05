@@ -58,21 +58,28 @@ export class TransactionService {
       select: { amount: true, type: true },
     });
 
+    const accounts = await this.prisma.account.findMany({
+      where: { tenantId, deletedAt: null },
+      select: { balance: true },
+    });
+
     let totalIncome = 0;
     let totalExpense = 0;
 
     transactions.forEach((trx) => {
       if (trx.type === 'INCOME') {
         totalIncome += Number(trx.amount);
-      } else {
+      } else if (trx.type === 'EXPENSE') {
         totalExpense += Number(trx.amount);
       }
     });
 
+    const netBalance = accounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
+
     return {
       totalIncome,
       totalExpense,
-      netBalance: totalIncome - totalExpense,
+      netBalance,
     };
   }
 }
