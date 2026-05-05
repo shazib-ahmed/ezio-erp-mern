@@ -91,8 +91,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
                         size="icon" 
                         className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => onDelete(item)}
-                        disabled={Boolean(item._count?.products && item._count.products > 0) || isSubmitting}
-                        title={item._count?.products && item._count.products > 0 ? "Cannot delete category with products" : "Delete category"}
+                        disabled={isSubmitting}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

@@ -20,6 +20,8 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchAccounts } from '../slice/accountSlice';
 import { cn } from '@/shared/lib/utils';
 import { Loader2 } from 'lucide-react';
+import { DatePicker } from '@/shared/components/common/DatePicker';
+import { parseISO } from 'date-fns';
 
 interface ExpenseFormModalProps {
   isOpen: boolean;
@@ -193,11 +195,9 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="expenseDate">Date</Label>
-              <Input
-                id="expenseDate"
-                type="date"
-                value={formData.expenseDate}
-                onChange={(e) => setFormData({ ...formData, expenseDate: e.target.value })}
+              <DatePicker 
+                date={formData.expenseDate ? parseISO(formData.expenseDate) : undefined}
+                setDate={(date) => setFormData({ ...formData, expenseDate: date ? date.toISOString() : '' })}
                 disabled={isSubmitting}
               />
             </div>

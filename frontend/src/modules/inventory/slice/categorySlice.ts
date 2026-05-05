@@ -120,7 +120,7 @@ const categorySlice = createSlice({
         (state) => { state.isSubmitting = true; }
       )
       .addMatcher(
-        (action) => [createCategory.fulfilled.type, updateCategory.fulfilled.type, createCategory.rejected.type, updateCategory.rejected.type, deleteCategory.rejected.type].includes(action.type),
+        (action) => [createCategory.fulfilled.type, updateCategory.fulfilled.type, deleteCategory.fulfilled.type, createCategory.rejected.type, updateCategory.rejected.type, deleteCategory.rejected.type].includes(action.type),
         (state) => { state.isSubmitting = false; }
       );
   },
