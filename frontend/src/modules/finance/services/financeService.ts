@@ -20,7 +20,7 @@ export const financeService = {
   },
 
   // Expenses
-  getExpenses: async (params?: { search?: string; limit?: number; cursor?: number }) => {
+  async getExpenses(params?: { search?: string; limit?: number; cursor?: number; category?: string; accountId?: number }) {
     const response = await axios.get('/finance/expenses', { params });
     return response.data;
   },
@@ -38,7 +38,7 @@ export const financeService = {
   },
 
   // Transactions
-  getTransactions: async (params?: { search?: string; limit?: number; cursor?: number }) => {
+  async getTransactions(params?: { search?: string; limit?: number; cursor?: number; type?: string; method?: string; accountId?: number }) {
     const response = await axios.get('/finance/transactions', { params });
     return response.data;
   },

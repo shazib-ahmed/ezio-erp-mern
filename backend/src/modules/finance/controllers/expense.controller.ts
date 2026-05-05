@@ -24,12 +24,16 @@ export class ExpenseController {
     @Query('search') search?: string,
     @Query('limit') limit?: string,
     @Query('cursor') cursor?: string,
+    @Query('category') category?: string,
+    @Query('accountId') accountId?: string,
   ) {
     return this.expenseService.findAll(
       Number(tenantId),
       search,
       limit ? Number(limit) : 10,
       cursor ? Number(cursor) : undefined,
+      category,
+      accountId ? Number(accountId) : undefined,
     );
   }
 

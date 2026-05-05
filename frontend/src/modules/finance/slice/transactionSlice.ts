@@ -19,7 +19,7 @@ const initialState: TransactionState = {
 
 export const fetchTransactions = createAsyncThunk(
   'finance/fetchTransactions',
-  async (params: { search?: string; limit?: number; cursor?: number } | undefined, { rejectWithValue }) => {
+  async (params: { search?: string; limit?: number; cursor?: number; type?: string; method?: string; accountId?: number } | undefined, { rejectWithValue }) => {
     try {
       return await financeService.getTransactions(params);
     } catch (error: any) {
@@ -56,7 +56,7 @@ const transactionSlice = createSlice({
       .addCase(fetchTransactions.fulfilled, (state, action) => {
         state.loading = false;
         const payload = action.payload;
-        // Handle { success, data: { data: [], nextCursor }, message }
+        
         let newData = [];
         let nextCursor = null;
 

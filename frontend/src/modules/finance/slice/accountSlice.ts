@@ -79,7 +79,7 @@ const accountSlice = createSlice({
       .addCase(fetchAccounts.fulfilled, (state, action) => {
         state.loading = false;
         const payload = action.payload;
-        console.log('fetchAccounts payload:', payload);
+        
         let newData = [];
         let nextCursor = null;
 
@@ -94,7 +94,7 @@ const accountSlice = createSlice({
         }
 
         if (action.meta.arg?.cursor) {
-          state.accounts = [...(state.accounts || []), ...newData];
+          state.accounts = [...state.accounts, ...newData];
         } else {
           state.accounts = newData;
         }
@@ -104,30 +104,12 @@ const accountSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      .addCase(createAccount.fulfilled, (state, action) => {
-        const newAccount = action.payload.data || action.payload;
-        if (Array.isArray(state.accounts)) {
-          state.accounts.unshift(newAccount);
-        } else {
-          state.accounts = [newAccount];
-        }
-      })
-      .addCase(updateAccount.fulfilled, (state, action) => {
-        const updatedData = action.payload.data || action.payload;
-        const index = state.accounts.findIndex(a => a.id === updatedData.id);
-        if (index !== -1) {
-          state.accounts[index] = updatedData;
-        }
-      })
-      .addCase(deleteAccount.fulfilled, (state, action) => {
-        state.accounts = state.accounts.filter(a => a.id !== action.payload);
-      })
       .addMatcher(
-        (action) => [createAccount.pending.type, updateAccount.pending.type].includes(action.type),
+        (action) => [createAccount.pending.type, updateAccount.pending.type, deleteAccount.pending.type].includes(action.type),
         (state) => { state.isSubmitting = true; }
       )
       .addMatcher(
-        (action) => [createAccount.fulfilled.type, updateAccount.fulfilled.type, createAccount.rejected.type, updateAccount.rejected.type].includes(action.type),
+        (action) => [createAccount.fulfilled.type, updateAccount.fulfilled.type, deleteAccount.fulfilled.type, createAccount.rejected.type, updateAccount.rejected.type, deleteAccount.rejected.type].includes(action.type),
         (state) => { state.isSubmitting = false; }
       );
   },

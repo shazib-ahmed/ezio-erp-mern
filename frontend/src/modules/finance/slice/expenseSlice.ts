@@ -18,8 +18,8 @@ const initialState: ExpenseState = {
 };
 
 export const fetchExpenses = createAsyncThunk(
-  'finance/fetchExpenses',
-  async (params: { search?: string; limit?: number; cursor?: number } | undefined, { rejectWithValue }) => {
+  'expense/fetchAll',
+  async (params: { search?: string; limit?: number; cursor?: number; category?: string; accountId?: number } | undefined, { rejectWithValue }) => {
     try {
       return await financeService.getExpenses(params);
     } catch (error: any) {

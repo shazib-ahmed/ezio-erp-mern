@@ -28,7 +28,7 @@ interface ExpenseFormModalProps {
   onClose: () => void;
   onSubmit: (data: any) => void;
   isSubmitting?: boolean;
-  editData?: any;
+  initialData?: any;
 }
 
 const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({ 
@@ -36,7 +36,7 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
   onClose, 
   onSubmit,
   isSubmitting = false,
-  editData
+  initialData
 }) => {
   const dispatch = useAppDispatch();
   const { accounts } = useAppSelector((state) => state.accounts);
@@ -53,14 +53,14 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
   });
 
   useEffect(() => {
-    if (editData) {
-      const mainTrx = editData.transactions?.find((t: any) => t.type === 'EXPENSE') || editData.transactions?.[0];
+    if (initialData) {
+      const mainTrx = initialData.transactions?.find((t: any) => t.type === 'EXPENSE') || initialData.transactions?.[0];
       
       setFormData({
-        title: editData.title || '',
-        category: editData.category || '',
-        amount: editData.amount?.toString() || '',
-        expenseDate: editData.expenseDate ? new Date(editData.expenseDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        title: initialData.title || '',
+        category: initialData.category || '',
+        amount: initialData.amount?.toString() || '',
+        expenseDate: initialData.expenseDate ? new Date(initialData.expenseDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         accountId: mainTrx?.accountId?.toString() || '',
         method: mainTrx?.method || 'CASH',
         referenceNo: mainTrx?.referenceNo || '',
@@ -78,7 +78,7 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
       });
       setErrors({});
     }
-  }, [editData, isOpen]);
+  }, [initialData, isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -105,7 +105,12 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
     
     if (selectedAccount) {
       if (selectedAccount.accountType === 'BANK') method = 'BANK_TRANSFER';
-      else if (selectedAccount.accountType === 'MOBILE_WALLET') method = 'BKASH';
+      else if (selectedAccount.accountType === 'MOBILE_WALLET') {
+        const name = selectedAccount.name.toLowerCase();
+        if (name.includes('bkash')) method = 'BKASH';
+        else if (name.includes('nagad')) method = 'NAGAD';
+        else method = 'BKASH';
+      }
       else method = 'CASH';
     }
 
@@ -122,7 +127,7 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {editData ? 'Edit Expense Record' : 'Record New Expense'}
+            {initialData ? 'Edit Expense Record' : 'Record New Expense'}
           </DialogTitle>
         </DialogHeader>
         
@@ -243,7 +248,7 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {editData ? 'Save Changes' : 'Record Expense'}
+              {initialData ? 'Save Changes' : 'Record Expense'}
             </Button>
           </DialogFooter>
         </form>

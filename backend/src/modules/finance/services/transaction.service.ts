@@ -5,15 +5,22 @@ import { PrismaService } from '@/shared/prisma/prisma.service';
 export class TransactionService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(tenantId: number, search?: string, limit: number = 10, cursor?: number) {
+  async findAll(tenantId: number, search?: string, limit: number = 10, cursor?: number, type?: string, method?: string, accountId?: number) {
     const whereClause: any = {
       tenantId,
       deletedAt: null,
+      ...(type && { type }),
+      ...(method && { method }),
+      ...(accountId && { accountId }),
       ...(search && {
         OR: [
           { trxId: { contains: search } },
           { purpose: { contains: search } },
           { referenceNo: { contains: search } },
+          { type: { contains: search } },
+          { method: { contains: search } },
+          // Search by amount if numeric
+          ...(!isNaN(Number(search)) ? [{ amount: { equals: Number(search) } }] : []),
         ],
       }),
     };
@@ -44,6 +51,7 @@ export class TransactionService {
       nextCursor,
     };
   }
+
   async getStats(tenantId: number) {
     const transactions = await this.prisma.transaction.findMany({
       where: { tenantId, deletedAt: null },

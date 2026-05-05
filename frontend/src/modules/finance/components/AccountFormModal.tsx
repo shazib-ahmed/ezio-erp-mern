@@ -24,7 +24,7 @@ interface AccountFormModalProps {
   onClose: () => void;
   onSubmit: (data: any) => void;
   isSubmitting?: boolean;
-  editData?: any;
+  initialData?: any;
 }
 
 const AccountFormModal: React.FC<AccountFormModalProps> = ({ 
@@ -32,7 +32,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({
   onClose, 
   onSubmit,
   isSubmitting = false,
-  editData
+  initialData
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
@@ -42,18 +42,18 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({
   });
 
   useEffect(() => {
-    if (editData) {
+    if (initialData) {
       setFormData({
-        name: editData.name || '',
-        accountType: editData.accountType || '',
-        balance: editData.balance?.toString() || '0',
+        name: initialData.name || '',
+        accountType: initialData.accountType || '',
+        balance: initialData.balance?.toString() || '0',
       });
       setErrors({});
     } else {
       setFormData({ name: '', accountType: '', balance: '' });
       setErrors({});
     }
-  }, [editData, isOpen]);
+  }, [initialData, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +79,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {editData ? 'Edit Account' : 'Add New Account'}
+            {initialData ? 'Edit Account' : 'Add New Account'}
           </DialogTitle>
         </DialogHeader>
         
@@ -124,7 +124,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({
 
           <div className="space-y-2">
             <Label htmlFor="balance" className={cn(errors.balance && "text-destructive")}>
-              {editData ? 'Account Balance' : 'Initial Balance'}
+              {initialData ? 'Account Balance' : 'Initial Balance'}
             </Label>
             <Input
               id="balance"
@@ -147,7 +147,7 @@ const AccountFormModal: React.FC<AccountFormModalProps> = ({
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {editData ? 'Save Changes' : 'Create Account'}
+              {initialData ? 'Save Changes' : 'Create Account'}
             </Button>
           </DialogFooter>
         </form>

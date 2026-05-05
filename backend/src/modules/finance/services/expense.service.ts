@@ -5,10 +5,19 @@ import { PrismaService } from '@/shared/prisma/prisma.service';
 export class ExpenseService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(tenantId: number, search?: string, limit: number = 10, cursor?: number) {
+  async findAll(tenantId: number, search?: string, limit: number = 10, cursor?: number, category?: string, accountId?: number) {
     const whereClause: any = {
       tenantId,
       deletedAt: null,
+      ...(category && { category }),
+      ...(accountId && {
+        transactions: {
+          some: {
+            accountId,
+            deletedAt: null
+          }
+        }
+      }),
       ...(search && {
         OR: [
           { title: { contains: search } },

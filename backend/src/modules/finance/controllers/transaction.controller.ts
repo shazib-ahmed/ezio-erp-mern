@@ -18,12 +18,18 @@ export class TransactionController {
     @Query('search') search?: string,
     @Query('limit') limit?: string,
     @Query('cursor') cursor?: string,
+    @Query('type') type?: string,
+    @Query('method') method?: string,
+    @Query('accountId') accountId?: string,
   ) {
     return this.transactionService.findAll(
       Number(tenantId),
       search,
-      limit ? Number(limit) : 10,
+      limit ? Number(limit) : undefined,
       cursor ? Number(cursor) : undefined,
+      type,
+      method,
+      accountId ? Number(accountId) : undefined,
     );
   }
 
