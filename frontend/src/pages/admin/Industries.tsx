@@ -60,16 +60,25 @@ const Industries: React.FC = () => {
   const handleSubmit = async (data: any) => {
     try {
       if (editingIndustry) {
-        const result = await dispatch(updateIndustry({ id: editingIndustry.id, data })).unwrap();
-        toast.success(`Industry "${result.name}" updated successfully`);
+        await dispatch(updateIndustry({ id: editingIndustry.id.toString(), data })).unwrap();
+        toast.success(`Industry updated successfully`);
       } else {
-        const result = await dispatch(createIndustry(data)).unwrap();
-        toast.success(`Industry "${result.name}" created successfully`);
+        await dispatch(createIndustry(data)).unwrap();
+        toast.success(`Industry created successfully`);
       }
+      dispatch(fetchIndustries({ search: searchQuery }));
       handleCloseModal();
     } catch (error: any) {
       toast.error(error || 'Something went wrong');
     }
+  };
+
+  const getAttributeStats = (attributes: any[]) => {
+    if (!Array.isArray(attributes)) return { total: 0, required: 0, optional: 0 };
+    const total = attributes.length;
+    const required = attributes.filter(a => a.required).length;
+    const optional = total - required;
+    return { total, required, optional };
   };
 
   const handleDeleteClick = (industry: Industry) => {
@@ -133,50 +142,68 @@ const Industries: React.FC = () => {
               </p>
             </div>
           ) : (
-            industries.map((ind: Industry) => (
-              <Card key={ind.id} className="border-border bg-card shadow-none transition-all duration-300 group overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center border border-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300">
-                      <Tag className="h-6 w-6" />
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5" 
-                        onClick={() => handleOpenModal(ind)}
-                        disabled={isSubmitting}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5" 
-                        onClick={() => handleDeleteClick(ind)}
-                        disabled={isSubmitting}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">{ind.name}</h3>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-border">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Registered Tenants</span>
-                        <span className="text-xl font-black text-foreground">{ind._count?.tenants || 0}</span>
+            industries.map((ind: Industry) => {
+              const { total, required, optional } = getAttributeStats(ind.attributes as any[]);
+              return (
+                <Card key={ind.id} className="border-border bg-card shadow-none transition-all duration-300 group overflow-hidden">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center border border-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                        <Tag className="h-6 w-6" />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5" 
+                          onClick={() => handleOpenModal(ind)}
+                          disabled={isSubmitting}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5" 
+                          onClick={() => handleDeleteClick(ind)}
+                          disabled={isSubmitting}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">{ind.name}</h3>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 py-3 border-y border-border/50">
+                        <div className="flex flex-col">
+                          <span className="text-[9px] uppercase font-bold text-muted-foreground">Total</span>
+                          <span className="text-sm font-bold text-foreground">{total}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[9px] uppercase font-bold text-muted-foreground">Req.</span>
+                          <span className="text-sm font-bold text-primary">{required}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[9px] uppercase font-bold text-muted-foreground">Opt.</span>
+                          <span className="text-sm font-bold text-muted-foreground">{optional}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex flex-col">
+                          <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground">Registered Tenants</span>
+                          <span className="text-lg font-black text-foreground">{ind._count?.tenants || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </div>
       </InfiniteScroll>

@@ -29,7 +29,10 @@ export class IndustryService implements IIndustryService {
         } : undefined
       },
       include: {
-        modules: true
+        modules: true,
+        _count: {
+          select: { tenants: true }
+        }
       }
     });
   }
@@ -99,6 +102,12 @@ export class IndustryService implements IIndustryService {
         modules: moduleIds ? {
           set: moduleIds.map(id => ({ id }))
         } : undefined
+      },
+      include: {
+        modules: true,
+        _count: {
+          select: { tenants: true }
+        }
       }
     });
   }

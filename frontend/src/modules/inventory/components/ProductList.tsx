@@ -14,7 +14,7 @@ import { DeleteConfirmationModal } from '@/shared/components/modals/DeleteConfir
 import { ProductFormModal } from './ProductFormModal';
 import { Product } from '../types';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { fetchProducts, deleteProduct, updateProduct } from '../slice/inventorySlice';
+import { fetchProducts, deleteProduct, updateProduct, fetchInventoryStats } from '../slice/inventorySlice';
 import { InfiniteScroll } from '@/shared/components/common/InfiniteScroll';
 
 interface ProductListProps {
@@ -45,6 +45,8 @@ const ProductList: React.FC<ProductListProps> = ({ search }) => {
     if (selectedProduct) {
       await dispatch(deleteProduct(selectedProduct.id));
       setIsDeleteDialogOpen(false);
+      dispatch(fetchProducts({ search }));
+      dispatch(fetchInventoryStats());
     }
   };
 
@@ -52,6 +54,8 @@ const ProductList: React.FC<ProductListProps> = ({ search }) => {
     if (selectedProduct) {
       await dispatch(updateProduct({ id: selectedProduct.id, data }));
       setIsEditModalOpen(false);
+      dispatch(fetchProducts({ search }));
+      dispatch(fetchInventoryStats());
     }
   };
 
@@ -68,6 +72,16 @@ const ProductList: React.FC<ProductListProps> = ({ search }) => {
     );
   }
 
+  const getProductImage = (product: any) => {
+    if (product.thumb) return product.thumb;
+    const attrs = product.attributes || {};
+    const imageUrl = Object.values(attrs).find(val => 
+      typeof val === 'string' && val.startsWith('http') && 
+      (val.match(/\.(jpeg|jpg|gif|png|webp)/i) || val.includes('cloudinary'))
+    );
+    return imageUrl as string | undefined;
+  };
+
   return (
     <InfiniteScroll
       onLoadMore={handleLoadMore}
@@ -78,7 +92,7 @@ const ProductList: React.FC<ProductListProps> = ({ search }) => {
         <Table>
           <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead className="font-bold">Product Name</TableHead>
+              <TableHead className="font-bold">Product</TableHead>
               <TableHead className="font-bold">Category</TableHead>
               
               {industryAttributes.map((attr: any) => (
@@ -92,7 +106,12 @@ const ProductList: React.FC<ProductListProps> = ({ search }) => {
             {loading && products.length === 0 ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-lg" />
+                      <Skeleton className="h-5 w-32" />
+                    </div>
+                  </TableCell>
                   <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                   {industryAttributes.map((attr: any) => (
                      <TableCell key={attr.name}><Skeleton className="h-5 w-24" /></TableCell>
@@ -107,10 +126,23 @@ const ProductList: React.FC<ProductListProps> = ({ search }) => {
                 </TableCell>
               </TableRow>
             ) : (
-              products.map((item) => (
-                <TableRow key={item.id} className="hover:bg-muted/30">
-                  <TableCell className="font-semibold">{item.name}</TableCell>
-                  <TableCell>{item.category?.name || (item as any).categoryName || 'N/A'}</TableCell>
+              products.map((item) => {
+                const imageUrl = getProductImage(item);
+                return (
+                  <TableRow key={item.id} className="hover:bg-muted/30">
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg border border-border bg-muted/30 overflow-hidden flex items-center justify-center">
+                          {imageUrl ? (
+                            <img src={imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="text-[10px] text-muted-foreground uppercase font-bold">No IMG</div>
+                          )}
+                        </div>
+                        <span className="font-semibold">{item.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{item.category?.name || (item as any).categoryName || 'N/A'}</TableCell>
                   
                   {industryAttributes.map((attr: any) => (
                     <TableCell key={attr.name}>
@@ -146,7 +178,8 @@ const ProductList: React.FC<ProductListProps> = ({ search }) => {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
+              );
+            })
             )}
           </TableBody>
         </Table>

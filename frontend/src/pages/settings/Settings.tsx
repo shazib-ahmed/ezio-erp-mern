@@ -24,6 +24,7 @@ const Settings: React.FC = () => {
     name: user?.tenant?.name || '',
     currencyCode: user?.tenant?.currencyCode || 'USD',
     currencySymbol: user?.tenant?.currencySymbol || '$',
+    taxRate: user?.tenant?.taxRate?.toString() || '0',
   });
 
   const [passwordData, setPasswordData] = React.useState({
@@ -216,6 +217,20 @@ const Settings: React.FC = () => {
                 <div className="space-y-2">
                   <Label htmlFor="currencySymbol">Currency Symbol</Label>
                   <Input id="currencySymbol" value={businessData.currencySymbol} onChange={handleBusinessChange} disabled={isSubmitting} placeholder="e.g., $, ৳, €" className="bg-background border-border h-11" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="taxRate">Default Tax Rate (%)</Label>
+                  <Input 
+                    id="taxRate" 
+                    type="number" 
+                    step="0.01" 
+                    value={businessData.taxRate} 
+                    onChange={handleBusinessChange} 
+                    disabled={isSubmitting} 
+                    placeholder="e.g., 5.00" 
+                    className="bg-background border-border h-11" 
+                  />
                 </div>
               </div>
 

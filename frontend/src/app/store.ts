@@ -8,6 +8,7 @@ import brandReducer from '@/modules/inventory/slice/brandSlice';
 import accountReducer from '@/modules/finance/slice/accountSlice';
 import expenseReducer from '@/modules/finance/slice/expenseSlice';
 import transactionReducer from '@/modules/finance/slice/transactionSlice';
+import salesReducer from '@/modules/sales/slice/salesSlice';
 
 export const store = configureStore({
   reducer: {
@@ -20,6 +21,7 @@ export const store = configureStore({
     accounts: accountReducer,
     expenses: expenseReducer,
     transactions: transactionReducer,
+    sales: salesReducer,
   },
 });
 

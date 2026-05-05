@@ -16,6 +16,7 @@ import { RolesModule } from './core/roles/roles.module';
 import { CategoryModule } from './modules/category/category.module';
 import { BrandModule } from './modules/brand/brand.module';
 import { FinanceModule } from './modules/finance/finance.module';
+import { SalesModule } from './modules/sales/sales.module';
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { FinanceModule } from './modules/finance/finance.module';
     RolesModule,
     CategoryModule,
     BrandModule,
-    FinanceModule
+    FinanceModule,
+    SalesModule
   ],
   controllers: [AppController],
   providers: [

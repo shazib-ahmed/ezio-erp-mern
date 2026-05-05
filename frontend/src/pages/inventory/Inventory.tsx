@@ -5,7 +5,7 @@ import { Plus, Download, Search } from 'lucide-react';
 import { Input } from '@/shared/ui/input';
 import { ProductFormModal } from '@/modules/inventory/components/ProductFormModal';
 import { useAppDispatch } from '@/app/hooks';
-import { addProduct } from '@/modules/inventory/slice/inventorySlice';
+import { addProduct, fetchProducts, fetchInventoryStats } from '@/modules/inventory/slice/inventorySlice';
 import { toast } from 'sonner';
 
 import { useDebounce } from '@/shared/hooks/useDebounce';
@@ -21,6 +21,9 @@ const Inventory: React.FC = () => {
       await dispatch(addProduct(data)).unwrap();
       toast.success('Product added successfully');
       setIsAddModalOpen(false);
+      // Refetch to keep data in sync
+      dispatch(fetchProducts({ search: debouncedSearch }));
+      dispatch(fetchInventoryStats());
     } catch (err: any) {
       toast.error(err || 'Failed to add product');
     }

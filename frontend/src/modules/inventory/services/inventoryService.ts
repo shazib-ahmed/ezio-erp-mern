@@ -15,12 +15,12 @@ export const inventoryService = {
     return (response.data as any).data;
   },
 
-  createProduct: async (data: Partial<Product>) => {
+  createProduct: async (data: any) => {
     const response = await axiosInstance.post<Product>('/inventory/products', data);
     return (response.data as any).data;
   },
 
-  updateProduct: async (id: number, data: Partial<Product>) => {
+  updateProduct: async (id: number, data: any) => {
     const response = await axiosInstance.put<Product>(`/inventory/products/${id}`, data);
     return (response.data as any).data;
   },

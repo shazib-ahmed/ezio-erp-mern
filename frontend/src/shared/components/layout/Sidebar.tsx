@@ -128,20 +128,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     );
 
     return navItems.filter(item => {
-      // 1. Role-based top-level filtering
-      if (!isSuperAdmin) {
-        // Tenants/Users see Business modules + Dashboard/Settings
-        const systemPaths = ['/admin/tenants', '/admin/industries'];
-        if (systemPaths.includes(item.path)) return false;
+      const systemPaths = ['/admin/tenants', '/admin/industries'];
+      const sharedPaths = ['/dashboard', '/settings'];
 
-        // Module Check for Tenants
-        if (item.moduleCode && !activeModuleCodes.includes(item.moduleCode)) return false;
+      if (isSuperAdmin) {
+        // 1. Super Admin sees ONLY system management + shared paths (Dashboard/Settings)
+        return systemPaths.includes(item.path) || sharedPaths.includes(item.path);
       }
 
-      // 2. Permission Check
+      // 2. Business users (Tenants/Staff) see Business modules + shared paths
+      // They must NOT see system management paths
+      if (systemPaths.includes(item.path)) return false;
+
+      // 3. Module Check for Tenants
+      if (item.moduleCode && !activeModuleCodes.includes(item.moduleCode)) return false;
+
+      // 4. Permission Check
       if (item.permissions && item.permissions.length > 0) {
         const hasPermission = item.permissions.some(p => userPermissions.includes(p));
-        if (!hasPermission && !isSuperAdmin) return false;
+        if (!hasPermission) return false;
       }
 
       return true;
@@ -173,6 +178,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     
     if (currentParent) {
       setExpandedItem(currentParent);
+    } else {
+      setExpandedItem(null);
     }
   }, [location.pathname, filteredNavItems]);
 

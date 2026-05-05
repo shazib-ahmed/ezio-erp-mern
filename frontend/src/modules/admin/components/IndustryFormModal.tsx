@@ -165,6 +165,7 @@ const IndustryFormModal: React.FC<IndustryFormModalProps> = ({
                           <SelectItem value="number">Number</SelectItem>
                           <SelectItem value="date">Date</SelectItem>
                           <SelectItem value="select">Dropdown (Select)</SelectItem>
+                          <SelectItem value="file">File</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

@@ -16,6 +16,7 @@ export interface Product {
     description?: string;
   };
   attributes?: Record<string, any>;
+  thumb?: string;
   createdAt?: string;
   updatedAt?: string;
 }

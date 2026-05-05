@@ -18,6 +18,7 @@ const StockManagement: React.FC = () => {
   const dispatch = useAppDispatch();
   const { products, stats, loading, nextCursor } = useAppSelector((state) => state.inventory);
   const { user } = useAppSelector((state) => state.auth);
+  const currencySymbol = user?.tenant?.currencySymbol || '$';
   const industryAttributes = (user as any)?.industry?.attributes || [];
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 500);
@@ -131,12 +132,25 @@ const StockManagement: React.FC = () => {
             ) : (
               products.map((item) => (
                 <TableRow key={item.id} className="hover:bg-muted/20 border-b border-border last:border-0 transition-colors">
-                  <TableCell className="font-bold text-foreground">{item.name}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-lg border border-border bg-muted/30 overflow-hidden flex items-center justify-center shrink-0">
+                        {item.thumb ? (
+                          <img src={item.thumb} alt={item.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="text-[8px] text-muted-foreground uppercase font-bold text-center p-1">No Image</div>
+                        )}
+                      </div>
+                      <span className="font-bold text-foreground">{item.name}</span>
+                    </div>
+                  </TableCell>
                   {industryAttributes.map((attr: any) => (
                     <TableCell key={attr.name} className={cn(attr.name === 'Stock' && "text-right font-black")}>
                       {attr.name.toLowerCase() === 'brand' 
                         ? (item.brand?.name || '-') 
-                        : (item.attributes?.[attr.name] || '-')}
+                        : (['price', 'cost', 'rate', 'mrp', 'unit price'].some(k => attr.name.toLowerCase().includes(k))
+                            ? `${currencySymbol}${item.attributes?.[attr.name] || '0'}`
+                            : (item.attributes?.[attr.name] || '-'))}
                     </TableCell>
                   ))}
                   <TableCell className="text-right pr-6">

@@ -9,6 +9,7 @@ export interface Industry {
   name: string;
   description?: string;
   modules: Module[];
+  attributes?: any;
   _count?: {
     tenants: number;
   };

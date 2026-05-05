@@ -65,7 +65,7 @@ export class AccountService {
   }
 
   async updateTenant(tenantId: number, dto: any) {
-    const { name, currencyCode, currencySymbol } = dto;
+    const { name, currencyCode, currencySymbol, taxRate } = dto;
     
     const updatedTenant = await this.prisma.tenant.update({
       where: { id: tenantId },
@@ -73,6 +73,7 @@ export class AccountService {
         name,
         currencyCode,
         currencySymbol,
+        taxRate: taxRate !== undefined ? Number(taxRate) : undefined,
       },
       include: {
         industry: true,

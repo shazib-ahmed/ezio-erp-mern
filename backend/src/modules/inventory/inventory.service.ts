@@ -59,19 +59,20 @@ export class InventoryService {
     return product;
   }
 
-  async create(tenantId: number, dto: CreateProductDto) {
+  async create(tenantId: number, dto: any) {
     return this.prisma.product.create({
       data: {
         ...dto,
         tenantId,
       },
       include: {
-        category: true
+        category: true,
+        brand: true
       }
     });
   }
 
-  async update(id: number, tenantId: number, dto: UpdateProductDto) {
+  async update(id: number, tenantId: number, dto: any) {
     await this.findOne(id, tenantId);
 
     return this.prisma.product.update({
@@ -80,7 +81,8 @@ export class InventoryService {
         ...dto,
       },
       include: {
-        category: true
+        category: true,
+        brand: true
       }
     });
   }

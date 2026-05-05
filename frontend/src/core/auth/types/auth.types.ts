@@ -53,6 +53,7 @@ export interface Tenant {
   activeModules?: Module[];
   currencyCode?: string;
   currencySymbol?: string;
+  taxRate?: number | string;
 }
 
 

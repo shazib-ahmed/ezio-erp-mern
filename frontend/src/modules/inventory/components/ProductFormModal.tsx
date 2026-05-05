@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -10,8 +10,11 @@ import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { 
-  Loader2 
-} from 'lucide-react';
+  Loader2,
+  Upload,
+  X,
+  FileText
+ } from 'lucide-react';
 import { 
   Select, 
   SelectContent, 
@@ -41,12 +44,15 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     name: '',
     categoryId: '',
     brandId: '',
+    thumb: '',
     attributes: {} as Record<string, any>
   });
+  const [attributeFiles, setAttributeFiles] = useState<Record<string, File>>({});
+  const [previews, setPreviews] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { user } = useAppSelector((state) => state.auth);
-  const industryAttributes = (user as any)?.industry?.attributes || [];
+  const industryAttributes = useMemo(() => (user as any)?.industry?.attributes || [], [user]);
 
   const { categories } = useAppSelector((state) => state.category);
   const { brands } = useAppSelector((state) => state.brand);
@@ -61,23 +67,52 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
   }, [dispatch, isOpen]);
 
   useEffect(() => {
+    const safeParseAttributes = (attrs: any) => {
+      if (!attrs) return {};
+      if (typeof attrs === 'object' && !Array.isArray(attrs)) return attrs;
+      if (typeof attrs === 'string') {
+        try {
+          const parsed = JSON.parse(attrs);
+          return typeof parsed === 'object' ? parsed : {};
+        } catch (e) {
+          return {};
+        }
+      }
+      return {};
+    };
+
     if (initialData) {
       setFormData({
         name: initialData.name || '',
         categoryId: initialData.categoryId?.toString() || '',
         brandId: initialData.brandId?.toString() || '',
-        attributes: initialData.attributes || {}
+        thumb: (typeof initialData.thumb === 'string') ? initialData.thumb : '',
+        attributes: safeParseAttributes(initialData.attributes)
       });
+      // Set existing file previews from URLs
+      const existingPreviews: Record<string, string> = {};
+      if (initialData.thumb) {
+        existingPreviews['thumb'] = initialData.thumb;
+      }
+      industryAttributes.forEach((attr: any) => {
+        if (attr.type === 'file' && initialData.attributes?.[attr.name]) {
+          existingPreviews[attr.name] = initialData.attributes[attr.name];
+        }
+      });
+      setPreviews(existingPreviews);
     } else {
       setFormData({
         name: '',
         categoryId: '',
         brandId: '',
+        thumb: '',
         attributes: {}
       });
+      setPreviews({});
+      setAttributeFiles({});
     }
     setErrors({});
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, industryAttributes]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -123,6 +158,51 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     }
   };
 
+  const handleFileChange = (name: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAttributeFiles(prev => ({ ...prev, [name]: file }));
+      
+      // If this is the thumbnail, clear the existing URL to avoid confusion
+      if (name === 'thumb') {
+        setFormData(prev => ({ ...prev, thumb: '' }));
+      }
+
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreviews(prev => ({ ...prev, [name]: reader.result as string }));
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setPreviews(prev => ({ ...prev, [name]: file.name }));
+      }
+    }
+  };
+
+  const clearFile = (name: string) => {
+    setAttributeFiles(prev => {
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+    setPreviews(prev => {
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+    
+    if (name === 'thumb') {
+      setFormData(prev => ({ ...prev, thumb: '' }));
+    } else {
+      handleAttributeChange(name, '');
+    }
+  };
+
+  const isImage = (url: string) => {
+    return url.match(/\.(jpeg|jpg|gif|png|webp)/i) || url.startsWith('data:image/');
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -138,10 +218,17 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
     // Validate mandatory industry attributes
     industryAttributes.forEach((attr: any) => {
-      // Skip brand as it's handled separately
-      if (attr.name.toLowerCase() === 'brand') return;
+      const attrNameLower = attr.name.toLowerCase();
+      if (attrNameLower === 'brand') return;
+      
+      if (attrNameLower === 'thumbnail' || attrNameLower === 'thumb') {
+          if (attr.required && !formData.thumb && !attributeFiles['thumb']) {
+              newErrors['thumb'] = 'Product Image is required';
+          }
+          return;
+      }
 
-      if (attr.required && !formData.attributes[attr.name]) {
+      if (attr.required && !formData.attributes[attr.name] && !attributeFiles[attr.name]) {
         newErrors[attr.name] = `${attr.name} is required`;
       }
     });
@@ -151,19 +238,40 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       return;
     }
 
-    // Create a clean object for submission
-    const { ...cleanData } = formData;
+    // Check if we have files to decide whether to use FormData
+    const hasFiles = Object.keys(attributeFiles).length > 0;
+    console.log('[ProductFormModal] Submitting. hasFiles:', hasFiles, 'attributeFiles:', Object.keys(attributeFiles));
 
-    onSubmit({
-      ...cleanData,
-      categoryId: parseInt(formData.categoryId),
-      brandId: formData.brandId ? parseInt(formData.brandId) : null,
-    });
+    if (hasFiles) {
+      const fd = new FormData();
+      fd.append('name', formData.name);
+      fd.append('categoryId', formData.categoryId);
+      if (formData.brandId) fd.append('brandId', formData.brandId);
+      
+      // Only append the thumb URL if we ARE NOT uploading a new file for it
+      if (formData.thumb && !attributeFiles['thumb']) {
+        fd.append('thumb', formData.thumb);
+      }
+      
+      fd.append('attributes', JSON.stringify(formData.attributes));
+      Object.entries(attributeFiles).forEach(([name, file]) => {
+        fd.append(name, file);
+      });
+      onSubmit(fd);
+    } else {
+      onSubmit({
+        ...formData,
+        categoryId: parseInt(formData.categoryId),
+        brandId: formData.brandId ? parseInt(formData.brandId) : null,
+        // Ensure thumb is a string or null
+        thumb: typeof formData.thumb === 'string' ? formData.thumb : null
+      });
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="md:max-w-[500px]">
+      <DialogContent className="md:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{initialData ? 'Edit Product' : 'Add New Product'}</DialogTitle>
         </DialogHeader>
@@ -221,9 +329,12 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
             {/* Integrated Dynamic Industry Attributes */}
             {industryAttributes
-              .filter((attr: any) => attr.name.toLowerCase() !== 'brand')
+              .filter((attr: any) => {
+                  const lower = attr.name.toLowerCase();
+                  return lower !== 'brand' && lower !== 'thumbnail' && lower !== 'thumb';
+              })
               .map((attr: any) => (
-              <div key={attr.name} className="space-y-2">
+              <div key={attr.name} className={cn("space-y-2", attr.name.toLowerCase().includes('price') && "col-span-2")}>
                 <Label htmlFor={`attr-${attr.name}`}>
                   {attr.name} {attr.required && <span className="text-destructive">*</span>}
                 </Label>
@@ -241,6 +352,38 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       ))}
                     </SelectContent>
                   </Select>
+                ) : attr.type === 'file' ? (
+                  <div className="space-y-2">
+                    {previews[attr.name] ? (
+                      <div className="relative w-full h-32 rounded-lg overflow-hidden border border-border bg-muted/20 group flex items-center justify-center">
+                        {isImage(previews[attr.name]) ? (
+                          <img src={previews[attr.name]} alt="Preview" className="w-full h-full object-contain" />
+                        ) : (
+                          <div className="flex flex-col items-center gap-1">
+                            <FileText className="h-8 w-8 text-muted-foreground" />
+                            <p className="text-[10px] font-medium text-muted-foreground truncate max-w-[150px]">{previews[attr.name]}</p>
+                          </div>
+                        )}
+                        <button 
+                          type="button" 
+                          onClick={() => clearFile(attr.name)}
+                          className="absolute top-1 right-1 p-1 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="relative h-32 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors flex flex-col items-center justify-center cursor-pointer bg-muted/10 overflow-hidden">
+                        <input 
+                          type="file" 
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                          onChange={(e) => handleFileChange(attr.name, e)}
+                        />
+                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                        <p className="text-xs text-muted-foreground">Upload {attr.name}</p>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <Input 
                     id={`attr-${attr.name}`}
@@ -254,6 +397,38 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 {errors[attr.name] && <p className="text-[12px] text-destructive font-medium">{errors[attr.name]}</p>}
               </div>
             ))}
+
+            {/* Dedicated Thumb Field (Moved to bottom) */}
+            <div className="space-y-2 col-span-2">
+              <Label>Product Thumbnail {industryAttributes.find((a: any) => a.name.toLowerCase() === 'thumbnail' || a.name.toLowerCase() === 'thumb')?.required && <span className="text-destructive">*</span>}</Label>
+              <div className="space-y-2">
+                {previews['thumb'] ? (
+                  <div className="relative w-full h-40 rounded-lg overflow-hidden border border-border bg-muted/20 group flex items-center justify-center">
+                    <img src={previews['thumb']} alt="Thumbnail Preview" className="w-full h-full object-contain" />
+                    <button 
+                      type="button" 
+                      onClick={() => clearFile('thumb')}
+                      className="absolute top-2 right-2 p-1.5 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative h-40 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors flex flex-col items-center justify-center cursor-pointer bg-muted/10 overflow-hidden">
+                    <input 
+                      type="file" 
+                      name="thumb"
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                      onChange={(e) => handleFileChange('thumb', e)}
+                    />
+                    <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">Upload Product Image</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">PNG, JPG or WEBP (Max 2MB)</p>
+                  </div>
+                )}
+                {errors['thumb'] || errors['Thumbnail'] ? <p className="text-[12px] text-destructive font-medium">{errors['thumb'] || errors['Thumbnail']}</p> : null}
+              </div>
+            </div>
           </div>
 
           <DialogFooter className="pt-4">

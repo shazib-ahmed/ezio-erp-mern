@@ -159,11 +159,14 @@ const AppRoutes: React.FC = () => {
                     <Skeleton className="h-10 w-40 bg-muted/50 rounded-lg" />
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {[...Array(8)].map((_, i) => (
-                      <div key={i} className="h-32 rounded-xl border border-border/50 bg-card/50 p-4 flex flex-col items-center gap-2">
-                        <Skeleton className="h-10 w-10 rounded-xl bg-muted/50" />
-                        <Skeleton className="h-4 w-20 bg-muted/50" />
-                        <Skeleton className="h-3 w-12 bg-muted/50" />
+                    {[...Array(12)].map((_, i) => (
+                      <div key={i} className="h-48 rounded-xl border border-border/50 bg-card/50 p-6 flex flex-col items-center justify-between">
+                        <Skeleton className="h-12 w-12 rounded-xl bg-muted/50" />
+                        <div className="space-y-2 w-full flex flex-col items-center">
+                          <Skeleton className="h-4 w-3/4 bg-muted/50" />
+                          <Skeleton className="h-4 w-1/2 bg-muted/50" />
+                        </div>
+                        <Skeleton className="h-5 w-20 bg-muted/50" />
                       </div>
                     ))}
                   </div>
