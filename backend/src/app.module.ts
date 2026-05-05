@@ -15,6 +15,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { RolesModule } from './core/roles/roles.module';
 import { CategoryModule } from './modules/category/category.module';
 import { BrandModule } from './modules/brand/brand.module';
+import { FinanceModule } from './modules/finance/finance.module';
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { BrandModule } from './modules/brand/brand.module';
     InventoryModule,
     RolesModule,
     CategoryModule,
-    BrandModule
+    BrandModule,
+    FinanceModule
   ],
   controllers: [AppController],
   providers: [

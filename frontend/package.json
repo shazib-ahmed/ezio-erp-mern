@@ -30,6 +30,7 @@
     "postcss": "^8.5.13",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
+    "react-infinite-scroll-component": "^7.2.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.14.2",
     "react-scripts": "5.0.1",
@@ -66,6 +67,7 @@
     ]
   },
   "devDependencies": {
+    "@types/react-infinite-scroll-component": "^4.2.5",
     "shadcn": "^4.6.0"
   }
 }

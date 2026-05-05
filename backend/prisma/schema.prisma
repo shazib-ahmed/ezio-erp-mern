@@ -342,6 +342,9 @@ model Transaction {
   tenantId        Int
   tenant          Tenant          @relation(fields: [tenantId], references: [id])
   
+  accountId       Int?            // The account associated with this transaction
+  account         Account?         @relation(fields: [accountId], references: [id])
+  
   // Relations (Optional based on transaction source)
   saleId          Int?
   sale            Sale?           @relation(fields: [saleId], references: [id])
@@ -404,6 +407,7 @@ model Account {
   
   tenantId    Int
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  transactions Transaction[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

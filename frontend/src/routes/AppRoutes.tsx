@@ -33,7 +33,8 @@ const Tenants = lazy(() => import('@/pages/admin/Tenants'));
 const Industries = lazy(() => import('@/pages/admin/Industries'));
 const LoginPage = lazy(() => import('@/pages/auth/Login'));
 const SignupPage = lazy(() => import('@/pages/auth/Signup'));
-const Finance = lazy(() => import('@/pages/finance/Finance'));
+const Transactions = lazy(() => import('@/pages/finance/Transactions'));
+const Expenses = lazy(() => import('@/pages/finance/Expenses'));
 
 const StockManagement = lazy(() => import('@/pages/inventory/StockManagement'));
 const Categories = lazy(() => import('@/pages/inventory/Categories'));
@@ -127,8 +128,8 @@ const AppRoutes: React.FC = () => {
         {/* Finance Sub-routes */}
         <Route path="/finance">
           <Route index element={<Navigate to="/finance/transactions" replace />} />
-          <Route path="transactions" element={<PermissionGuard moduleCode="MOD_FINANCE" permissions={['TRX_VIEW']}><Suspense fallback={<TableSkeleton />}><Finance /></Suspense></PermissionGuard>} />
-          <Route path="expenses" element={<PermissionGuard moduleCode="MOD_FINANCE" permissions={['EXPENSE_VIEW']}><Suspense fallback={<TableSkeleton />}><Finance /></Suspense></PermissionGuard>} />
+          <Route path="transactions" element={<PermissionGuard moduleCode="MOD_FINANCE" permissions={['TRX_VIEW']}><Suspense fallback={<TableSkeleton />}><Transactions /></Suspense></PermissionGuard>} />
+          <Route path="expenses" element={<PermissionGuard moduleCode="MOD_FINANCE" permissions={['EXPENSE_VIEW']}><Suspense fallback={<TableSkeleton />}><Expenses /></Suspense></PermissionGuard>} />
           <Route path="ledger" element={<PermissionGuard moduleCode="MOD_FINANCE" permissions={['TRX_VIEW']}><Suspense fallback={<TableSkeleton />}><Ledger /></Suspense></PermissionGuard>} />
           <Route path="accounts" element={<PermissionGuard moduleCode="MOD_FINANCE" permissions={['ACCOUNT_VIEW']}><Suspense fallback={<TableSkeleton />}><Accounts /></Suspense></PermissionGuard>} />
           <Route path="payable-receivable" element={<PermissionGuard moduleCode="MOD_FINANCE" permissions={['TRX_VIEW']}><Suspense fallback={<TableSkeleton />}><PayableReceivable /></Suspense></PermissionGuard>} />
@@ -140,61 +141,61 @@ const AppRoutes: React.FC = () => {
         {/* Sales Sub-routes */}
         <Route path="/sales">
           <Route index element={<Navigate to="/sales/history" replace />} />
-          <Route path="pos" element={
-            <PermissionGuard moduleCode="MOD_SALES" permissions={['SALE_CREATE']}>
-              <Suspense fallback={
-                <div className="animate-in fade-in duration-500 h-[calc(100vh-180px)] flex flex-col lg:flex-row gap-6">
-                  {/* Left Skeleton */}
-                  <div className="flex-1 flex flex-col gap-4">
-                    <div className="flex gap-4">
-                      <Skeleton className="h-10 flex-1 bg-muted/50 rounded-lg" />
-                      <Skeleton className="h-10 w-40 bg-muted/50 rounded-lg" />
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {[...Array(8)].map((_, i) => (
-                        <div key={i} className="h-32 rounded-xl border border-border/50 bg-card/50 p-4 flex flex-col items-center gap-2">
-                          <Skeleton className="h-10 w-10 rounded-xl bg-muted/50" />
-                          <Skeleton className="h-4 w-20 bg-muted/50" />
-                          <Skeleton className="h-3 w-12 bg-muted/50" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Right Sidebar Skeleton */}
-                  <div className="w-full lg:w-96 flex flex-col gap-6 bg-card border border-border rounded-xl p-6">
-                    <div className="flex justify-between items-center pb-4 border-b border-border">
-                      <Skeleton className="h-6 w-32 bg-muted/50" />
-                      <Skeleton className="h-6 w-12 bg-muted/50" />
-                    </div>
-                    <div className="flex-1 space-y-4">
-                      {[...Array(3)].map((_, i) => (
-                        <div key={i} className="flex gap-3 bg-muted/20 p-2 rounded-lg border border-border/50">
-                          <div className="flex-1 space-y-2">
-                            <Skeleton className="h-4 w-24 bg-muted/50" />
-                            <Skeleton className="h-3 w-16 bg-muted/50" />
-                          </div>
-                          <Skeleton className="h-8 w-16 bg-muted/50" />
-                        </div>
-                      ))}
-                    </div>
-                    <div className="border-t border-border pt-4 space-y-3">
-                      <div className="flex justify-between"><Skeleton className="h-4 w-20 bg-muted/50" /><Skeleton className="h-4 w-12 bg-muted/50" /></div>
-                      <div className="flex justify-between"><Skeleton className="h-6 w-24 bg-muted/50" /><Skeleton className="h-6 w-16 bg-muted/50" /></div>
-                      <Skeleton className="h-14 w-full bg-primary/20 rounded-lg" />
-                    </div>
-                  </div>
-                </div>
-              }>
-                <POS />
-              </Suspense>
-            </PermissionGuard>
-          } />
           <Route path="history" element={<PermissionGuard moduleCode="MOD_SALES" permissions={['SALE_VIEW']}><Suspense fallback={<TableSkeleton />}><Orders /></Suspense></PermissionGuard>} />
           <Route path="customers" element={<PermissionGuard moduleCode="MOD_SALES" permissions={['CUSTOMER_VIEW']}><Suspense fallback={<TableSkeleton />}><Customers /></Suspense></PermissionGuard>} />
           <Route path="quotations" element={<PermissionGuard moduleCode="MOD_SALES" permissions={['SALE_VIEW']}><Suspense fallback={<TableSkeleton />}><Quotations /></Suspense></PermissionGuard>} />
           <Route path="orders" element={<PermissionGuard moduleCode="MOD_SALES" permissions={['SALE_VIEW']}><Suspense fallback={<TableSkeleton />}><Orders /></Suspense></PermissionGuard>} />
           <Route path="returns" element={<PermissionGuard moduleCode="MOD_SALES" permissions={['SALE_VIEW']}><Suspense fallback={<TableSkeleton />}><Returns /></Suspense></PermissionGuard>} />
         </Route>
+
+        {/* POS Terminal */}
+        <Route path="/pos" element={
+          <PermissionGuard moduleCode="MOD_SALES" permissions={['SALE_CREATE']}>
+            <Suspense fallback={
+              <div className="animate-in fade-in duration-500 h-[calc(100vh-180px)] flex flex-col lg:flex-row gap-6">
+                <div className="flex-1 flex flex-col gap-4">
+                  <div className="flex gap-4">
+                    <Skeleton className="h-10 flex-1 bg-muted/50 rounded-lg" />
+                    <Skeleton className="h-10 w-40 bg-muted/50 rounded-lg" />
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {[...Array(8)].map((_, i) => (
+                      <div key={i} className="h-32 rounded-xl border border-border/50 bg-card/50 p-4 flex flex-col items-center gap-2">
+                        <Skeleton className="h-10 w-10 rounded-xl bg-muted/50" />
+                        <Skeleton className="h-4 w-20 bg-muted/50" />
+                        <Skeleton className="h-3 w-12 bg-muted/50" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="w-full lg:w-96 flex flex-col gap-6 bg-card border border-border rounded-xl p-6">
+                  <div className="flex justify-between items-center pb-4 border-b border-border">
+                    <Skeleton className="h-6 w-32 bg-muted/50" />
+                    <Skeleton className="h-6 w-12 bg-muted/50" />
+                  </div>
+                  <div className="flex-1 space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="flex gap-3 bg-muted/20 p-2 rounded-lg border border-border/50">
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-4 w-24 bg-muted/50" />
+                          <Skeleton className="h-3 w-16 bg-muted/50" />
+                        </div>
+                        <Skeleton className="h-8 w-16 bg-muted/50" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t border-border pt-4 space-y-3">
+                    <div className="flex justify-between"><Skeleton className="h-4 w-20 bg-muted/50" /><Skeleton className="h-4 w-12 bg-muted/50" /></div>
+                    <div className="flex justify-between"><Skeleton className="h-6 w-24 bg-muted/50" /><Skeleton className="h-6 w-16 bg-muted/50" /></div>
+                    <Skeleton className="h-14 w-full bg-primary/20 rounded-lg" />
+                  </div>
+                </div>
+              </div>
+            }>
+              <POS />
+            </Suspense>
+          </PermissionGuard>
+        } />
 
         {/* HRM Sub-routes */}
         <Route path="/hrm">

@@ -1,18 +1,31 @@
 export interface Transaction {
   id: number;
-  date: string;
-  category: string;
-  description: string;
-  amount: number;
-  type: 'Income' | 'Expense';
-  status: 'Completed' | 'Pending';
+  trxId: string;
+  amount: number | string;
+  type: 'INCOME' | 'EXPENSE';
+  purpose: string;
+  method: 'CASH' | 'BANK_TRANSFER' | 'BKASH' | 'NAGAD' | 'CARD';
+  referenceNo?: string;
+  note?: string;
+  createdAt: string;
+  customer?: any;
+  sale?: any;
+  expense?: any;
 }
+
 export interface Account {
   id: number;
   name: string;
-  type: 'Bank' | 'Cash' | 'Mobile' | 'Other';
-  accountNumber?: string;
-  bankName?: string;
-  balance: number;
-  status: 'Active' | 'Inactive';
+  accountType: string;
+  balance: number | string;
+  createdAt: string;
+}
+
+export interface Expense {
+  id: number;
+  title: string;
+  category: string;
+  amount: number | string;
+  expenseDate: string;
+  createdAt: string;
 }

@@ -29,11 +29,8 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({
   const isAdminPath = location.pathname.startsWith('/admin');
   
   if (isSuperAdmin) {
-    // Super Admin should NOT access business modules
-    // Business routes in AppRoutes all have a moduleCode (Inventory, Sales, etc.)
-    if (moduleCode && moduleCode !== 'MOD_SYSTEM') {
-      return <Navigate to="/dashboard" replace />;
-    }
+    // Super Admin can access everything for management/testing
+    return <>{children}</>;
   } else {
     // Regular Tenants/Users should NOT access admin paths
     if (isAdminPath) {

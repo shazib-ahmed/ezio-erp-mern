@@ -9,7 +9,8 @@ import {
   ChevronRight,
   Wallet,
   Building2,
-  Tag
+  Tag,
+  Monitor
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
@@ -45,6 +46,13 @@ const navItems: NavItem[] = [
     ]
   },
   { 
+    icon: Monitor, 
+    label: 'POS Terminal', 
+    path: '/pos',
+    moduleCode: 'MOD_SALES',
+    permissions: ['SALE_CREATE']
+  },
+  { 
     icon: Wallet, 
     label: 'Finance', 
     path: '/finance',
@@ -63,7 +71,6 @@ const navItems: NavItem[] = [
     moduleCode: 'MOD_SALES',
     permissions: ['SALE_VIEW'],
     subItems: [
-      { label: 'POS Terminal', path: '/sales/pos', permissions: ['SALE_CREATE'] },
       { label: 'Sales History', path: '/sales/history', permissions: ['SALE_VIEW'] },
       { label: 'Customers', path: '/sales/customers', permissions: ['CUSTOMER_VIEW'] },
     ]
@@ -122,11 +129,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
     return navItems.filter(item => {
       // 1. Role-based top-level filtering
-      if (isSuperAdmin) {
-        // Super Admin only sees System modules + Dashboard/Settings
-        const allowedPaths = ['/dashboard', '/settings', '/admin/tenants', '/admin/industries'];
-        if (!allowedPaths.includes(item.path)) return false;
-      } else {
+      if (!isSuperAdmin) {
         // Tenants/Users see Business modules + Dashboard/Settings
         const systemPaths = ['/admin/tenants', '/admin/industries'];
         if (systemPaths.includes(item.path)) return false;

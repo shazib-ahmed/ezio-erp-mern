@@ -1,50 +1,52 @@
 import React, { useState } from 'react';
-import { AccountList } from '@/modules/finance/components/AccountList';
-import { AccountFormModal } from '@/modules/finance/components/AccountFormModal';
 import { Button } from '@/shared/ui/button';
 import { Plus, Search } from 'lucide-react';
 import { Input } from '@/shared/ui/input';
+import { ExpenseList } from '@/modules/finance/components/ExpenseList';
+import { ExpenseFormModal } from '@/modules/finance/components/ExpenseFormModal';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { 
-  fetchAccounts, 
-  createAccount, 
-  updateAccount 
-} from '@/modules/finance/slice/accountSlice';
+  fetchExpenses, 
+  createExpense, 
+  updateExpense 
+} from '@/modules/finance/slice/expenseSlice';
+import { fetchAccounts } from '@/modules/finance/slice/accountSlice';
 import { toast } from 'sonner';
 
-const Accounts: React.FC = () => {
+const Expenses: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { isSubmitting } = useAppSelector((state) => state.accounts);
+  const { isSubmitting } = useAppSelector((state) => state.expenses);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editAccountData, setEditAccountData] = useState<any>(null);
+  const [editExpenseData, setEditExpenseData] = useState<any>(null);
 
-  const handleOpenModal = (account?: any) => {
-    setEditAccountData(account || null);
+  const handleOpenModal = (expense?: any) => {
+    setEditExpenseData(expense || null);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setEditAccountData(null);
+    setEditExpenseData(null);
   };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
-    dispatch(fetchAccounts({ search: e.target.value }));
+    dispatch(fetchExpenses({ search: e.target.value }));
   };
 
   const handleSubmit = async (data: any) => {
     try {
-      if (editAccountData) {
-        await dispatch(updateAccount({ id: editAccountData.id, data })).unwrap();
-        toast.success('Account updated successfully');
+      if (editExpenseData) {
+        await dispatch(updateExpense({ id: editExpenseData.id, data })).unwrap();
+        toast.success('Expense updated successfully');
       } else {
-        await dispatch(createAccount(data)).unwrap();
-        toast.success('Account created successfully');
+        await dispatch(createExpense(data)).unwrap();
+        toast.success('Expense recorded successfully');
       }
       handleCloseModal();
-      dispatch(fetchAccounts());
+      dispatch(fetchExpenses());
+      dispatch(fetchAccounts({}));
     } catch (err: any) {
       toast.error(err);
     }
@@ -54,12 +56,12 @@ const Accounts: React.FC = () => {
     <>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Bank & Accounts</h1>
-          <p className="text-muted-foreground">Manage your Bank, Cash, and Mobile banking accounts.</p>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">Expenses</h1>
+          <p className="text-muted-foreground">Track and manage business expenditures.</p>
         </div>
         
         <Button onClick={() => handleOpenModal()} className="gap-2 shadow-lg shadow-primary/20">
-          <Plus className="h-4 w-4" /> Add Account
+          <Plus className="h-4 w-4" /> Record Expense
         </Button>
       </div>
 
@@ -68,7 +70,7 @@ const Accounts: React.FC = () => {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search accounts..." 
+              placeholder="Search expenses..." 
               className="pl-10 bg-background border-border w-full"
               value={search}
               onChange={handleSearch}
@@ -77,17 +79,17 @@ const Accounts: React.FC = () => {
         </div>
       </div>
 
-      <AccountList onEdit={handleOpenModal} />
+      <ExpenseList onEdit={handleOpenModal} />
       
-      <AccountFormModal 
+      <ExpenseFormModal 
         isOpen={isModalOpen} 
         onClose={handleCloseModal}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
-        editData={editAccountData}
+        editData={editExpenseData}
       />
     </>
   );
 };
 
-export default Accounts;
+export default Expenses;
